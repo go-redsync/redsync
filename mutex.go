@@ -1,8 +1,12 @@
 package redsync
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"sync"
 	"time"
+
+	"github.com/garyburd/redigo/redis"
 )
 
 type Mutex struct {
@@ -25,13 +29,90 @@ type Mutex struct {
 }
 
 func (m *Mutex) Lock() error {
-	panic("unimplemented")
+	m.nodem.Lock()
+	defer m.nodem.Unlock()
+
+	value, err := m.genValue()
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < m.tries; i++ {
+		start := time.Now()
+
+		n := 0
+		for _, pool := range m.pools {
+			ok := m.acquire(pool, value)
+			if ok {
+				n++
+			}
+		}
+
+		until := time.Now().Add(m.expiry - time.Now().Sub(start) - time.Duration(int64(float64(m.expiry)*m.factor)) + 2*time.Millisecond)
+		if n >= m.quorum && time.Now().Before(until) {
+			m.value = value
+			m.until = until
+			return nil
+		}
+		for _, pool := range m.pools {
+			m.release(pool, value)
+		}
+
+		time.Sleep(m.delay)
+	}
+
+	return ErrFailed
 }
 
-func (m *Mutex) Unlock() {
-	panic("unimplemented")
+func (m *Mutex) Unlock() bool {
+	m.nodem.Lock()
+	defer m.nodem.Unlock()
+
+	n := 0
+	for _, pool := range m.pools {
+		ok := m.release(pool, m.value)
+		if ok {
+			n++
+		}
+	}
+	if n >= m.quorum {
+		return true
+	}
+	return false
 }
 
 func (m *Mutex) touch() bool {
 	return false
+}
+
+func (m *Mutex) genValue() (string, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b), nil
+}
+
+func (m *Mutex) acquire(pool Pool, value string) bool {
+	conn := pool.Get()
+	defer conn.Close()
+
+	reply, err := redis.String(conn.Do("SET", m.name, value, "NX", "PX", int(m.expiry/time.Millisecond)))
+	return err == nil && reply == "OK"
+}
+
+var deleteScript = redis.NewScript(1, `
+	if redis.call("GET", KEYS[1]) == ARGV[1] then
+		return redis.call("DEL", KEYS[1])
+	else
+		return 0
+	end
+`)
+
+func (m *Mutex) release(pool Pool, value string) bool {
+	conn := pool.Get()
+	defer conn.Close()
+	status, err := deleteScript.Do(conn, m.name, value)
+	return err == nil && status != 0
 }
