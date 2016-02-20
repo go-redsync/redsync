@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 )
 
 func TestMutex(t *testing.T) {
-	pools := newMockPools()
+	pools := newMockPools(8)
 	mutexes := newTestMutexes(pools, "test-mutex", 8)
 	orderCh := make(chan int)
 	for i, mutex := range mutexes {
@@ -31,7 +32,7 @@ func TestMutex(t *testing.T) {
 }
 
 func TestMutexExtend(t *testing.T) {
-	pools := newMockPools()
+	pools := newMockPools(8)
 	mutexes := newTestMutexes(pools, "test-mutex-extend", 1)
 	mutex := mutexes[0]
 
@@ -57,7 +58,31 @@ func TestMutexExtend(t *testing.T) {
 	}
 }
 
-func newMockPools() []Pool {
+func TestMutexQuorum(t *testing.T) {
+	pools := newMockPools(4)
+	for mask := 0; mask < 1<<uint(len(pools)); mask++ {
+		mutexes := newTestMutexes(pools, "test-mutex-partial-"+strconv.Itoa(mask), 1)
+		mutex := mutexes[0]
+		mutex.tries = 1
+
+		n := clogPools(pools, mask, mutex)
+
+		if n >= len(pools)/2+1 {
+			err := mutex.Lock()
+			if err != nil {
+				t.Fatalf("Expected err == nil, got %q", err)
+			}
+			assertAcquired(t, pools, mutex)
+		} else {
+			err := mutex.Lock()
+			if err != ErrFailed {
+				t.Fatalf("Expected err == %q, got %q", ErrFailed, err)
+			}
+		}
+	}
+}
+
+func newMockPools(n int) []Pool {
 	pools := []Pool{}
 	for _, server := range servers {
 		func(server *tempredis.Server) {
@@ -73,6 +98,9 @@ func newMockPools() []Pool {
 				},
 			})
 		}(server)
+		if len(pools) == n {
+			break
+		}
 	}
 	return pools
 }
@@ -103,6 +131,23 @@ func getPoolExpiries(pools []Pool, name string) []int {
 		expiries = append(expiries, expiry)
 	}
 	return expiries
+}
+
+func clogPools(pools []Pool, mask int, mutex *Mutex) int {
+	n := 0
+	for i, pool := range pools {
+		if mask&(1<<uint(i)) == 0 {
+			n++
+			continue
+		}
+		conn := pool.Get()
+		_, err := conn.Do("SET", mutex.name, "foobar")
+		conn.Close()
+		if err != nil {
+			panic(err)
+		}
+	}
+	return n
 }
 
 func newTestMutexes(pools []Pool, name string, n int) []*Mutex {
