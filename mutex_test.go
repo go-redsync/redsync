@@ -10,7 +10,7 @@ import (
 
 func TestMutex(t *testing.T) {
 	pools := newMockPools()
-	mutexes := newTestMutexes(pools, 8)
+	mutexes := newTestMutexes(pools, "test-mutex", 8)
 	orderCh := make(chan int)
 	for i, mutex := range mutexes {
 		go func(i int, mutex *Mutex) {
@@ -39,6 +39,33 @@ func TestMutex(t *testing.T) {
 	}
 }
 
+func TestMutexExtend(t *testing.T) {
+	pools := newMockPools()
+	mutexes := newTestMutexes(pools, "test-mutex-extend", 1)
+	mutex := mutexes[0]
+
+	err := mutex.Lock()
+	if err != nil {
+		t.Fatalf("Expected err == nil, got %q", err)
+	}
+	defer mutex.Unlock()
+
+	time.Sleep(1 * time.Second)
+
+	expiries := getPoolExpiries(pools, mutex.name)
+	ok := mutex.Extend()
+	if !ok {
+		t.Fatalf("Expected ok == true, got %v", ok)
+	}
+	expiries2 := getPoolExpiries(pools, mutex.name)
+
+	for i, expiry := range expiries {
+		if expiry >= expiries2[i] {
+			t.Fatalf("Expected expiries[%d] > expiry, got %d %d", i, expiries2[i], expiry)
+		}
+	}
+}
+
 func newMockPools() []Pool {
 	pools := []Pool{}
 	for _, server := range servers {
@@ -64,6 +91,7 @@ func getPoolValues(pools []Pool, name string) []string {
 	for _, pool := range pools {
 		conn := pool.Get()
 		value, err := redis.String(conn.Do("GET", name))
+		conn.Close()
 		if err != nil && err != redis.ErrNil {
 			panic(err)
 		}
@@ -72,14 +100,28 @@ func getPoolValues(pools []Pool, name string) []string {
 	return values
 }
 
-func newTestMutexes(pools []Pool, n int) []*Mutex {
+func getPoolExpiries(pools []Pool, name string) []int {
+	expiries := []int{}
+	for _, pool := range pools {
+		conn := pool.Get()
+		expiry, err := redis.Int(conn.Do("PTTL", name))
+		conn.Close()
+		if err != nil && err != redis.ErrNil {
+			panic(err)
+		}
+		expiries = append(expiries, expiry)
+	}
+	return expiries
+}
+
+func newTestMutexes(pools []Pool, name string, n int) []*Mutex {
 	mutexes := []*Mutex{}
 	for i := 0; i < n; i++ {
 		mutexes = append(mutexes, &Mutex{
-			name:   "test-mutex",
+			name:   name,
 			expiry: 8 * time.Second,
-			tries:  16,
-			delay:  512 * time.Millisecond,
+			tries:  32,
+			delay:  500 * time.Millisecond,
 			factor: 0.01,
 			quorum: len(pools)/2 + 1,
 			pools:  pools,
