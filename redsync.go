@@ -3,14 +3,29 @@ package redsync
 import "time"
 
 type Redsync struct {
+	pools []Pool
 }
 
 func New(pools []Pool) *Redsync {
-	panic("unimplemented")
+	return &Redsync{
+		pools: pools,
+	}
 }
 
 func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
-	panic("unimplemented")
+	m := &Mutex{
+		name:   name,
+		expiry: 8 * time.Second,
+		tries:  32,
+		delay:  500 * time.Millisecond,
+		factor: 0.01,
+		quorum: len(r.pools)/2 + 1,
+		pools:  r.pools,
+	}
+	for _, o := range options {
+		o.Apply(m)
+	}
+	return m
 }
 
 type Option interface {

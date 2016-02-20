@@ -20,16 +20,7 @@ func TestMutex(t *testing.T) {
 			}
 			defer mutex.Unlock()
 
-			n := 0
-			values := getPoolValues(pools, mutex.name)
-			for _, value := range values {
-				if value == mutex.value {
-					n++
-				}
-			}
-			if n < mutex.quorum {
-				t.Fatalf("Expected n >= %d, got %d", mutex.quorum, n)
-			}
+			assertAcquired(t, pools, mutex)
 
 			orderCh <- i
 		}(i, mutex)
@@ -128,4 +119,17 @@ func newTestMutexes(pools []Pool, name string, n int) []*Mutex {
 		})
 	}
 	return mutexes
+}
+
+func assertAcquired(t *testing.T, pools []Pool, mutex *Mutex) {
+	n := 0
+	values := getPoolValues(pools, mutex.name)
+	for _, value := range values {
+		if value == mutex.value {
+			n++
+		}
+	}
+	if n < mutex.quorum {
+		t.Fatalf("Expected n >= %d, got %d", mutex.quorum, n)
+	}
 }
