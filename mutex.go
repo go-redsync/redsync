@@ -9,6 +9,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
+// A Mutex is a distributed mutual exclusion lock.
 type Mutex struct {
 	name   string
 	expiry time.Duration
@@ -28,6 +29,7 @@ type Mutex struct {
 	pools []Pool
 }
 
+// Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) Lock() error {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
@@ -64,6 +66,7 @@ func (m *Mutex) Lock() error {
 	return ErrFailed
 }
 
+// Unlock unlocks m and returns the status of unlock. It is a run-time error if m is not locked on entry to Unlock.
 func (m *Mutex) Unlock() bool {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
@@ -78,6 +81,7 @@ func (m *Mutex) Unlock() bool {
 	return n >= m.quorum
 }
 
+// Extend resets the mutex's expiry and returns the status of expiry extension. It is a run-time error if m is not locked on entry to Extend.
 func (m *Mutex) Extend() bool {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
