@@ -38,25 +38,25 @@ func (f OptionFunc) Apply(mutex *Mutex) {
 	f(mutex)
 }
 
-func (f OptionFunc) SetExpiry(expiry time.Duration) Option {
+func SetExpiry(expiry time.Duration) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.expiry = expiry
 	})
 }
 
-func (f OptionFunc) SetTries(tries int) Option {
+func SetTries(tries int) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.tries = tries
 	})
 }
 
-func (f OptionFunc) SetDelay(delay time.Duration) Option {
+func SetDelay(delay time.Duration) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.delay = delay
 	})
 }
 
-func (f OptionFunc) SetFactor(factor float64) Option {
+func SetFactor(factor float64) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.factor = factor
 	})
