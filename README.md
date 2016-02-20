@@ -1,6 +1,6 @@
 # Redsync
 
-[![Build Status](https://drone.io/github.com/redsync/redsync/status.png)](https://drone.io/github.com/redsync/redsync/latest)
+[![Build Status](https://drone.io/github.com/go-redsync/redsync/status.png)](https://drone.io/github.com/go-redsync/redsync/latest)
 
 Redsync provides a Redis-based distributed mutual exclusion lock implementation for Go as described in [this post](http://redis.io/topics/distlock). A reference library (by [antirez](https://github.com/antirez)) for Ruby is available at [github.com/antirez/redlock-rb](https://github.com/antirez/redlock-rb).
 
