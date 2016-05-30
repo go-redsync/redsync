@@ -40,6 +40,10 @@ func (m *Mutex) Lock() error {
 	}
 
 	for i := 0; i < m.tries; i++ {
+		if i != 0 {
+			time.Sleep(m.delay)
+		}
+		
 		start := time.Now()
 
 		n := 0
@@ -59,8 +63,6 @@ func (m *Mutex) Lock() error {
 		for _, pool := range m.pools {
 			m.release(pool, value)
 		}
-
-		time.Sleep(m.delay)
 	}
 
 	return ErrFailed
