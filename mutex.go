@@ -43,7 +43,7 @@ func (m *Mutex) Lock() error {
 		if i != 0 {
 			time.Sleep(m.delay)
 		}
-		
+
 		start := time.Now()
 
 		n := 0
@@ -96,6 +96,11 @@ func (m *Mutex) Extend() bool {
 		}
 	}
 	return n >= m.quorum
+}
+
+// Value returns the current value associated with m.
+func (m *Mutex) Value() string {
+	return m.value
 }
 
 func (m *Mutex) genValue() (string, error) {
