@@ -102,14 +102,24 @@ func (m *Mutex) UnlockWithValue(value string) bool {
 	return n >= m.quorum
 }
 
-// Extend resets the mutex's expiry and returns the status of expiry extension. It is a run-time error if m is not locked on entry to Extend.
+// Extend resets the mutex's expiry and returns the status of expiry
+// extension. It is a run-time error if m is not locked on entry to Extend.
 func (m *Mutex) Extend() bool {
-	m.nodem.Lock()
-	defer m.nodem.Unlock()
+	m.nodem.RLock()
+	defer m.nodem.RUnlock()
+
+	return m.ExtendWithValue(m.value)
+}
+
+// ExtendWithValue resets the mutex's expiry and returns the status of expiry
+// extension. It is a run-time error if m is not locked on entry to Extend.
+func (m *Mutex) ExtendWithValue(value string) bool {
+	m.nodem.RLock()
+	defer m.nodem.RUnlock()
 
 	n := 0
 	for _, pool := range m.pools {
-		ok := m.touch(pool, m.value, int(m.expiry/time.Millisecond))
+		ok := m.touch(pool, value, int(m.expiry/time.Millisecond))
 		if ok {
 			n++
 		}
