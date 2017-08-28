@@ -24,7 +24,7 @@ type Mutex struct {
 	value string
 	until time.Time
 
-	nodem sync.Mutex
+	nodem sync.RWMutex
 
 	pools []Pool
 }
@@ -77,10 +77,20 @@ func (m *Mutex) LockWithValue(value string) error {
 	return ErrFailed
 }
 
-// Unlock unlocks m and returns the status of unlock. It is a run-time error if m is not locked on entry to Unlock.
+// Unlock unlocks m and returns the status of unlock. It is a run-time error if
+// m is not locked on entry to Unlock.
 func (m *Mutex) Unlock() bool {
-	m.nodem.Lock()
-	defer m.nodem.Unlock()
+	m.nodem.RLock()
+	defer m.nodem.RUnlock()
+
+	return m.UnlockWithValue(m.value)
+}
+
+// UnlockWithValue unlocks m and returns the status of unlock. It is a run-time
+// error if m is not locked on entry to Unlock.
+func (m *Mutex) UnlockWithValue(value string) bool {
+	m.nodem.RLock()
+	defer m.nodem.RUnlock()
 
 	n := 0
 	for _, pool := range m.pools {
