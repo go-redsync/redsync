@@ -31,6 +31,36 @@ func TestMutex(t *testing.T) {
 	}
 }
 
+func TestMutexWithValue(t *testing.T) {
+	pools := newMockPools(8)
+	mutexes := newTestMutexes(pools, "test-mutex", 8)
+	orderCh := make(chan int)
+	value, err := GenValue()
+	if err != nil {
+		t.Fatalf("Expected err == nil, got %q", err)
+	}
+	for i, mutex := range mutexes {
+		go func(i int, mutex *Mutex) {
+			err := mutex.LockWithValue(value)
+			if err != nil {
+				t.Fatalf("Expected err == nil, got %q", err)
+			}
+			defer mutex.Unlock()
+
+			assertAcquired(t, pools, mutex)
+
+			if mutex.Value() != value {
+				t.Fatalf("Expected value == %s, got %s", value, mutex.Value())
+			}
+
+			orderCh <- i
+		}(i, mutex)
+	}
+	for range mutexes {
+		<-orderCh
+	}
+}
+
 func TestMutexExtend(t *testing.T) {
 	pools := newMockPools(8)
 	mutexes := newTestMutexes(pools, "test-mutex-extend", 1)

@@ -29,15 +29,24 @@ type Mutex struct {
 	pools []Pool
 }
 
-// Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
+// Lock locks m. In case it returns an error on failure, you may retry to
+// acquire the lock by calling this method again. It will generate a value
+// randomly.
 func (m *Mutex) Lock() error {
-	m.nodem.Lock()
-	defer m.nodem.Unlock()
-
-	value, err := m.genValue()
+	value, err := GenValue()
 	if err != nil {
 		return err
 	}
+
+	return m.LockWithValue(value)
+}
+
+// LockWithValue locks m with the given value. In case it returns an error on
+// failure, you may retry to acquire the lock by calling this method again. It
+// will generate a value randomly.
+func (m *Mutex) LockWithValue(value string) error {
+	m.nodem.Lock()
+	defer m.nodem.Unlock()
 
 	for i := 0; i < m.tries; i++ {
 		if i != 0 {
@@ -103,7 +112,8 @@ func (m *Mutex) Value() string {
 	return m.value
 }
 
-func (m *Mutex) genValue() (string, error) {
+// GenValue will generate a value for use with `LockWithValue`.
+func GenValue() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {
