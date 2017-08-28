@@ -71,10 +71,3 @@ func SetDriftFactor(factor float64) Option {
 		m.factor = factor
 	})
 }
-
-// SetValue sets the value of the mutex.
-func SetValue(value string) Option {
-	return OptionFunc(func(m *Mutex) {
-		m.value = value
-	})
-}
