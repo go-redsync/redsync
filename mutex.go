@@ -29,15 +29,9 @@ type Mutex struct {
 	pools []Pool
 }
 
-// Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
-func (m *Mutex) Lock() (value string, err error) {
+func (m *Mutex) LockWithValue(value string) (string, error) {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
-
-	value, err = m.genValue()
-	if err != nil {
-		return "", err
-	}
 
 	for i := 0; i < m.tries; i++ {
 		if i != 0 {
@@ -66,6 +60,15 @@ func (m *Mutex) Lock() (value string, err error) {
 	}
 
 	return "", ErrFailed
+}
+
+// Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
+func (m *Mutex) Lock() (value string, err error) {
+	value, err = m.genValue()
+	if err != nil {
+		return "", err
+	}
+	return m.LockWithValue(value)
 }
 
 // Unlock unlocks m and returns the status of unlock.
