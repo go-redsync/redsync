@@ -30,20 +30,20 @@ type Mutex struct {
 }
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
-func (m *Mutex) Lock() error {
+func (m *Mutex) Lock() (value string, err error) {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
-	value, err := m.genValue()
+	value, err = m.genValue()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	for i := 0; i < m.tries; i++ {
 		if i != 0 {
 			time.Sleep(m.delay)
 		}
-		
+
 		start := time.Now()
 
 		n := 0
@@ -58,24 +58,28 @@ func (m *Mutex) Lock() error {
 		if n >= m.quorum && time.Now().Before(until) {
 			m.value = value
 			m.until = until
-			return nil
+			return value, nil
 		}
 		for _, pool := range m.pools {
 			m.release(pool, value)
 		}
 	}
 
-	return ErrFailed
+	return "", ErrFailed
 }
 
 // Unlock unlocks m and returns the status of unlock.
 func (m *Mutex) Unlock() bool {
+	return m.UnlockWithValue(m.value)
+}
+
+func (m *Mutex) UnlockWithValue(value string) bool {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
 	n := 0
 	for _, pool := range m.pools {
-		ok := m.release(pool, m.value)
+		ok := m.release(pool, value)
 		if ok {
 			n++
 		}
