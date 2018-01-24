@@ -29,7 +29,7 @@ type Mutex struct {
 	pools []Pool
 }
 
-func (m *Mutex) LockWithValue(value string) (string, error) {
+func (m *Mutex) LockWithValue(value string) error {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
@@ -52,21 +52,21 @@ func (m *Mutex) LockWithValue(value string) (string, error) {
 		if n >= m.quorum && time.Now().Before(until) {
 			m.value = value
 			m.until = until
-			return value, nil
+			return nil
 		}
 		for _, pool := range m.pools {
 			m.release(pool, value)
 		}
 	}
 
-	return "", ErrFailed
+	return ErrFailed
 }
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
-func (m *Mutex) Lock() (value string, err error) {
-	value, err = m.genValue()
+func (m *Mutex) Lock() error {
+	value, err := m.genValue()
 	if err != nil {
-		return "", err
+		return err
 	}
 	return m.LockWithValue(value)
 }
