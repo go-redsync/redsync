@@ -73,16 +73,12 @@ func (m *Mutex) Lock() error {
 
 // Unlock unlocks m and returns the status of unlock.
 func (m *Mutex) Unlock() bool {
-	return m.UnlockWithValue(m.value)
-}
-
-func (m *Mutex) UnlockWithValue(value string) bool {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
 	n := 0
 	for _, pool := range m.pools {
-		ok := m.release(pool, value)
+		ok := m.release(pool, m.value)
 		if ok {
 			n++
 		}
