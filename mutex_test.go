@@ -154,13 +154,13 @@ func newTestMutexes(pools []Pool, name string, n int) []*Mutex {
 	mutexes := []*Mutex{}
 	for i := 0; i < n; i++ {
 		mutexes = append(mutexes, &Mutex{
-			name:   name,
-			expiry: 8 * time.Second,
-			tries:  32,
-			delay:  500 * time.Millisecond,
-			factor: 0.01,
-			quorum: len(pools)/2 + 1,
-			pools:  pools,
+			name:      name,
+			expiry:    8 * time.Second,
+			tries:     32,
+			delayFunc: func(tries int) { time.Sleep(500 * time.Millisecond) },
+			factor:    0.01,
+			quorum:    len(pools)/2 + 1,
+			pools:     pools,
 		})
 	}
 	return mutexes
