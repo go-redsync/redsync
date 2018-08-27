@@ -9,8 +9,8 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// A DelayFunc is used to wait for a while between retries
-type DelayFunc func(tries int)
+// A DelayFunc is used to decide the amount of time to wait between retries.
+type DelayFunc func(tries int) time.Duration
 
 // A Mutex is a distributed mutual exclusion lock.
 type Mutex struct {
@@ -44,7 +44,7 @@ func (m *Mutex) Lock() error {
 
 	for i := 0; i < m.tries; i++ {
 		if i != 0 {
-			m.delayFunc(i)
+			time.Sleep(m.delayFunc(i))
 		}
 
 		start := time.Now()
