@@ -46,7 +46,7 @@ func (m *Mutex) Lock() error {
 
 		start := time.Now()
 
-		n := m.handlePoolsAsync(func(pool Pool) bool {
+		n := m.actOnPoolsAsync(func(pool Pool) bool {
 			return m.acquire(pool, value)
 		})
 
@@ -56,7 +56,7 @@ func (m *Mutex) Lock() error {
 			m.until = until
 			return nil
 		}
-		m.handlePoolsAsync(func(pool Pool) bool {
+		m.actOnPoolsAsync(func(pool Pool) bool {
 			return m.release(pool, value)
 		})
 	}
@@ -69,7 +69,7 @@ func (m *Mutex) Unlock() bool {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
-	n := m.handlePoolsAsync(func(pool Pool) bool {
+	n := m.actOnPoolsAsync(func(pool Pool) bool {
 		return m.release(pool, m.value)
 	})
 	return n >= m.quorum
@@ -80,7 +80,7 @@ func (m *Mutex) Extend() bool {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
-	n := m.handlePoolsAsync(func(pool Pool) bool {
+	n := m.actOnPoolsAsync(func(pool Pool) bool {
 		return m.touch(pool, m.value, int(m.expiry/time.Millisecond))
 	})
 	return n >= m.quorum
@@ -132,11 +132,11 @@ func (m *Mutex) touch(pool Pool, value string, expiry int) bool {
 	return err == nil && status != "ERR"
 }
 
-func (m *Mutex) handlePoolsAsync(handleFn func(Pool) bool) int {
+func (m *Mutex) actOnPoolsAsync(actFn func(Pool) bool) int {
 	ch := make(chan bool)
 	for _, pool := range m.pools {
 		go func(pool Pool) {
-			ch <- handleFn(pool)
+			ch <- actFn(pool)
 		}(pool)
 	}
 	n := 0
