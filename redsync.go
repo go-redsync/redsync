@@ -17,13 +17,13 @@ func New(pools []Pool) *Redsync {
 // NewMutex returns a new distributed mutex with given name.
 func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 	m := &Mutex{
-		name:   name,
-		expiry: 8 * time.Second,
-		tries:  32,
-		delay:  500 * time.Millisecond,
-		factor: 0.01,
-		quorum: len(r.pools)/2 + 1,
-		pools:  r.pools,
+		name:      name,
+		expiry:    8 * time.Second,
+		tries:     32,
+		delayFunc: func(tries int) time.Duration { return 500 * time.Millisecond },
+		factor:    0.01,
+		quorum:    len(r.pools)/2 + 1,
+		pools:     r.pools,
 	}
 	for _, o := range options {
 		o.Apply(m)
@@ -61,7 +61,16 @@ func SetTries(tries int) Option {
 // SetRetryDelay can be used to set the amount of time to wait between retries.
 func SetRetryDelay(delay time.Duration) Option {
 	return OptionFunc(func(m *Mutex) {
-		m.delay = delay
+		m.delayFunc = func(tries int) time.Duration {
+			return delay
+		}
+	})
+}
+
+// SetRetryDelayFunc can be used to override default delay behavior.
+func SetRetryDelayFunc(delayFunc DelayFunc) Option {
+	return OptionFunc(func(m *Mutex) {
+		m.delayFunc = delayFunc
 	})
 }
 
