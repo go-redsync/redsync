@@ -67,7 +67,7 @@ func SetRetryDelay(delay time.Duration) Option {
 	})
 }
 
-// SetRetryDelayFunc can be used to set the DelayFunc.
+// SetRetryDelayFunc can be used to override default delay behavior.
 func SetRetryDelayFunc(delayFunc DelayFunc) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.delayFunc = delayFunc
