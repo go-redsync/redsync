@@ -32,18 +32,3 @@ func NewScript(keyCount int, src string) *Script {
 	io.WriteString(h, src)
 	return &Script{keyCount, src, hex.EncodeToString(h.Sum(nil))}
 }
-
-func (self *Script) Args(spec string, keysAndArgs []interface{}) []interface{} {
-	var args []interface{}
-	if self.KeyCount < 0 {
-		args = make([]interface{}, 1+len(keysAndArgs))
-		args[0] = spec
-		copy(args[1:], keysAndArgs)
-	} else {
-		args = make([]interface{}, 2+len(keysAndArgs))
-		args[0] = spec
-		args[1] = self.KeyCount
-		copy(args[2:], keysAndArgs)
-	}
-	return args
-}

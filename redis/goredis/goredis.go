@@ -24,7 +24,9 @@ type GoredisConn struct {
 }
 
 func (self *GoredisConn) Get(name string) (string, error) {
-	return self.delegate.Get(name).Result()
+	value, err := self.delegate.Get(name).Result()
+	err = noErrNil(err)
+	return value, err
 }
 
 func (self *GoredisConn) Set(name string, value string) (bool, error) {
@@ -41,7 +43,6 @@ func (self *GoredisConn) PTTL(name string) (time.Duration, error) {
 }
 
 func (self *GoredisConn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
-
 	var keys []string
 	var args []interface{}
 
@@ -64,10 +65,21 @@ func (self *GoredisConn) Eval(script *redsyncredis.Script, keysAndArgs ...interf
 	if err != nil && strings.HasPrefix(err.Error(), "NOSCRIPT ") {
 		v, err = self.delegate.Eval(script.Src, keys, args...).Result()
 	}
+	err = noErrNil(err)
 	return v, err
 }
 
 func (self *GoredisConn) Close() error {
 	// Not needed for this library
 	return nil
+}
+
+func noErrNil(err error) error {
+
+	if err != nil && err.Error() == "redis: nil" {
+		return nil
+	} else {
+		return err
+	}
+
 }

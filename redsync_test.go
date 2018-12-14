@@ -26,17 +26,22 @@ func makeCases(poolCount int) map[string]*testCase {
 			poolCount,
 			newMockPoolsRedigo(poolCount),
 		},
-		/*
-			"goredis": {
-				poolCount,
-				newMockPoolsGoredis(poolCount),
-			},
-		*/
+		"goredis": {
+			poolCount,
+			newMockPoolsGoredis(poolCount),
+		},
 	}
 }
 
+// Maintain seprate blocks of servers for each type of driver
+const SERVER_POOLS = 2
+const SERVER_POOL_SIZE = 8
+const REDIGO_BLOCK = 0
+const GOREDIS_BLOCK = 1
+
 func TestMain(m *testing.M) {
-	for i := 0; i < 8; i++ {
+	// Create 16 here, goredis will use the last 8
+	for i := 0; i < SERVER_POOL_SIZE*SERVER_POOLS; i++ {
 		server, err := tempredis.Start(tempredis.Config{})
 		if err != nil {
 			panic(err)
@@ -69,7 +74,10 @@ func TestRedsync(t *testing.T) {
 
 func newMockPoolsRedigo(n int) []redis.Pool {
 	pools := []redis.Pool{}
-	for _, server := range servers {
+
+	offset := REDIGO_BLOCK * SERVER_POOL_SIZE
+
+	for i := offset; i < offset+SERVER_POOL_SIZE; i++ {
 		func(server *tempredis.Server) {
 			pools = append(pools, redigo.NewRedigoPool(&redigolib.Pool{
 				MaxIdle:     3,
@@ -82,10 +90,11 @@ func newMockPoolsRedigo(n int) []redis.Pool {
 					return err
 				},
 			}))
-		}(server)
+		}(servers[i])
 		if len(pools) == n {
 			break
 		}
+
 	}
 	return pools
 }
@@ -93,18 +102,22 @@ func newMockPoolsRedigo(n int) []redis.Pool {
 func newMockPoolsGoredis(n int) []redis.Pool {
 	pools := []redis.Pool{}
 
-	for _, server := range servers {
+	offset := GOREDIS_BLOCK * SERVER_POOL_SIZE
+
+	for i := offset; i < offset+SERVER_POOL_SIZE; i++ {
 		func(server *tempredis.Server) {
 
 			client := goredislib.NewClient(&goredislib.Options{
-				Addr: server.Socket(),
+				Network: "unix",
+				Addr:    server.Socket(),
 			})
 
 			pools = append(pools, goredis.NewGoredisPool(client))
-		}(server)
+		}(servers[i])
 		if len(pools) == n {
 			break
 		}
+
 	}
 	return pools
 }

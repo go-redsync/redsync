@@ -10,7 +10,12 @@ Install Redsync using the go get command:
 
     $ go get gopkg.in/redsync.v1
 
-The only dependencies are the Go distribution and [Redigo](https://github.com/gomodule/redigo).
+Two driver implementations will be installed; however, only the one used will be include in your project.
+
+ * [Redigo](https://github.com/gomodule/redigo).
+ * [Go-redis](https://github.com/go-redis/redis).
+ 
+See the [examples](examples) folder for usage of each driver.
 
 ## Documentation
 

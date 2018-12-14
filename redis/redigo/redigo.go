@@ -48,10 +48,9 @@ func (self *RedigoConn) PTTL(name string) (time.Duration, error) {
 }
 
 func (self *RedigoConn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
-
-	v, err := self.delegate.Do("EVALSHA", script.Args(script.Hash, keysAndArgs)...)
+	v, err := self.delegate.Do("EVALSHA", args(script, script.Hash, keysAndArgs)...)
 	if e, ok := err.(redis.Error); ok && strings.HasPrefix(string(e), "NOSCRIPT ") {
-		v, err = self.delegate.Do("EVAL", script.Args(script.Src, keysAndArgs)...)
+		v, err = self.delegate.Do("EVAL", args(script, script.Src, keysAndArgs)...)
 	}
 	return v, err
 
@@ -63,10 +62,24 @@ func (self *RedigoConn) Close() error {
 }
 
 func noErrNil(err error) error {
-
 	if err == redis.ErrNil {
 		return nil
 	} else {
 		return err
 	}
+}
+
+func args(script *redsyncredis.Script, spec string, keysAndArgs []interface{}) []interface{} {
+	var args []interface{}
+	if script.KeyCount < 0 {
+		args = make([]interface{}, 1+len(keysAndArgs))
+		args[0] = spec
+		copy(args[1:], keysAndArgs)
+	} else {
+		args = make([]interface{}, 2+len(keysAndArgs))
+		args[0] = spec
+		args[1] = script.KeyCount
+		copy(args[2:], keysAndArgs)
+	}
+	return args
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	redsyncredis "github.com/go-redsync/redsync/redis"
+	"github.com/go-redsync/redsync/redis"
 )
 
 func TestMutex(t *testing.T) {
@@ -92,7 +92,7 @@ func TestMutexQuorum(t *testing.T) {
 	}
 }
 
-func getPoolValues(pools []redsyncredis.Pool, name string) []string {
+func getPoolValues(pools []redis.Pool, name string) []string {
 	values := []string{}
 	for _, pool := range pools {
 		conn := pool.Get()
@@ -106,7 +106,7 @@ func getPoolValues(pools []redsyncredis.Pool, name string) []string {
 	return values
 }
 
-func getPoolExpiries(pools []redsyncredis.Pool, name string) []int {
+func getPoolExpiries(pools []redis.Pool, name string) []int {
 	expiries := []int{}
 	for _, pool := range pools {
 		conn := pool.Get()
@@ -120,7 +120,7 @@ func getPoolExpiries(pools []redsyncredis.Pool, name string) []int {
 	return expiries
 }
 
-func clogPools(pools []redsyncredis.Pool, mask int, mutex *Mutex) int {
+func clogPools(pools []redis.Pool, mask int, mutex *Mutex) int {
 	n := 0
 	for i, pool := range pools {
 		if mask&(1<<uint(i)) == 0 {
@@ -137,7 +137,7 @@ func clogPools(pools []redsyncredis.Pool, mask int, mutex *Mutex) int {
 	return n
 }
 
-func newTestMutexes(pools []redsyncredis.Pool, name string, n int) []*Mutex {
+func newTestMutexes(pools []redis.Pool, name string, n int) []*Mutex {
 	mutexes := []*Mutex{}
 	for i := 0; i < n; i++ {
 		mutexes = append(mutexes, &Mutex{
@@ -153,7 +153,7 @@ func newTestMutexes(pools []redsyncredis.Pool, name string, n int) []*Mutex {
 	return mutexes
 }
 
-func assertAcquired(t *testing.T, pools []redsyncredis.Pool, mutex *Mutex) {
+func assertAcquired(t *testing.T, pools []redis.Pool, mutex *Mutex) {
 	n := 0
 	values := getPoolValues(pools, mutex.name)
 	for _, value := range values {
