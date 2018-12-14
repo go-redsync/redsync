@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redsync/redsync/redis"
 )
 
 // A DelayFunc is used to decide the amount of time to wait between retries.
@@ -29,7 +29,7 @@ type Mutex struct {
 
 	nodem sync.Mutex
 
-	pools []Pool
+	pools []redis.Pool
 }
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
@@ -110,11 +110,15 @@ func (m *Mutex) genValue() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func (m *Mutex) acquire(pool Pool, value string) bool {
+func (m *Mutex) acquire(pool redis.Pool, value string) bool {
 	conn := pool.Get()
 	defer conn.Close()
-	reply, err := redis.String(conn.Do("SET", m.name, value, "NX", "PX", int(m.expiry/time.Millisecond)))
-	return err == nil && reply == "OK"
+	reply, err := conn.SetNX(m.name, value, m.expiry)
+	if err != nil {
+		return false
+	} else {
+		return reply
+	}
 }
 
 var deleteScript = redis.NewScript(1, `
@@ -125,10 +129,10 @@ var deleteScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) release(pool Pool, value string) bool {
+func (m *Mutex) release(pool redis.Pool, value string) bool {
 	conn := pool.Get()
 	defer conn.Close()
-	status, err := deleteScript.Do(conn, m.name, value)
+	status, err := conn.Eval(deleteScript, m.name, value)
 	return err == nil && status != 0
 }
 
@@ -140,9 +144,9 @@ var touchScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) touch(pool Pool, value string, expiry int) bool {
+func (m *Mutex) touch(pool redis.Pool, value string, expiry int) bool {
 	conn := pool.Get()
 	defer conn.Close()
-	status, err := redis.String(touchScript.Do(conn, m.name, value, expiry))
+	status, err := conn.Eval(touchScript, m.name, value, expiry)
 	return err == nil && status != "ERR"
 }
