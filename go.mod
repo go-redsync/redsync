@@ -1,4 +1,4 @@
-module github.com/go-redsync/redsync
+module github.com/activatedio/redsync
 
 require (
 	github.com/go-redis/redis v6.14.2+incompatible
