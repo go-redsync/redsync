@@ -49,13 +49,9 @@ func (m *Mutex) Lock() error {
 
 		start := time.Now()
 
-		n := 0
-		for _, pool := range m.pools {
-			ok := m.acquire(pool, value)
-			if ok {
-				n++
-			}
-		}
+		n := m.actOnPoolsAsync(func(pool Pool) bool {
+			return m.acquire(pool, value)
+		})
 
 		until := time.Now().Add(m.expiry - time.Now().Sub(start) - time.Duration(int64(float64(m.expiry)*m.factor)) + 2*time.Millisecond)
 		if n >= m.quorum && time.Now().Before(until) {
@@ -63,9 +59,9 @@ func (m *Mutex) Lock() error {
 			m.until = until
 			return nil
 		}
-		for _, pool := range m.pools {
-			m.release(pool, value)
-		}
+		m.actOnPoolsAsync(func(pool Pool) bool {
+			return m.release(pool, value)
+		})
 	}
 
 	return ErrFailed
@@ -76,13 +72,9 @@ func (m *Mutex) Unlock() bool {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
-	n := 0
-	for _, pool := range m.pools {
-		ok := m.release(pool, m.value)
-		if ok {
-			n++
-		}
-	}
+	n := m.actOnPoolsAsync(func(pool Pool) bool {
+		return m.release(pool, m.value)
+	})
 	return n >= m.quorum
 }
 
@@ -91,13 +83,9 @@ func (m *Mutex) Extend() bool {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
-	n := 0
-	for _, pool := range m.pools {
-		ok := m.touch(pool, m.value, int(m.expiry/time.Millisecond))
-		if ok {
-			n++
-		}
-	}
+	n := m.actOnPoolsAsync(func(pool Pool) bool {
+		return m.touch(pool, m.value, int(m.expiry/time.Millisecond))
+	})
 	return n >= m.quorum
 }
 
@@ -145,4 +133,20 @@ func (m *Mutex) touch(pool Pool, value string, expiry int) bool {
 	defer conn.Close()
 	status, err := redis.String(touchScript.Do(conn, m.name, value, expiry))
 	return err == nil && status != "ERR"
+}
+
+func (m *Mutex) actOnPoolsAsync(actFn func(Pool) bool) int {
+	ch := make(chan bool)
+	for _, pool := range m.pools {
+		go func(pool Pool) {
+			ch <- actFn(pool)
+		}(pool)
+	}
+	n := 0
+	for range m.pools {
+		if <-ch {
+			n++
+		}
+	}
+	return n
 }
