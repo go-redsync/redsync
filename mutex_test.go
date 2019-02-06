@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"errors"
 	"strconv"
 	"testing"
 	"time"
@@ -45,9 +46,9 @@ func TestMutexExtend(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	expiries := getPoolExpiries(pools, mutex.name)
-	ok := mutex.Extend()
-	if !ok {
-		t.Fatalf("Expected ok == true, got %v", ok)
+	err = mutex.Extend()
+	if err != nil {
+		t.Fatalf("Expected err == nil, got %q", err)
 	}
 	expiries2 := getPoolExpiries(pools, mutex.name)
 
@@ -75,10 +76,46 @@ func TestMutexQuorum(t *testing.T) {
 			assertAcquired(t, pools, mutex)
 		} else {
 			err := mutex.Lock()
-			if err != ErrFailed {
-				t.Fatalf("Expected err == %q, got %q", ErrFailed, err)
+			if err != ErrTaken {
+				t.Fatalf("Expected err to be ErrTaken, got %q", err)
 			}
 		}
+	}
+}
+
+func TestMutexNoQuorum(t *testing.T) {
+	pools := newMockPools(4)
+
+	// Node 1 provokes a RedisError.
+	pools[1].(*redis.Pool).Dial = func() (redis.Conn, error) {
+		return nil, errors.New("test")
+	}
+
+	mutexes := newTestMutexes(pools, "test-mutex", 1)
+	mutex := mutexes[0]
+	mutex.tries = 1
+
+	// Node 3 provokes a NodeTaken.
+	clogPools(pools, 1<<3, mutex)
+
+	err := mutex.Lock()
+
+	errs, ok := err.(NoQuorum)
+	if !ok {
+		t.Fatalf("Expected NoQuorum, got %q", err)
+	}
+	if expectedErrs := 2; expectedErrs != len(errs) {
+		t.Fatalf("Expected %d errors, got %q", expectedErrs, err)
+	}
+
+	redisErr, ok := errs[0].(RedisError)
+	if !ok || redisErr.Node != 1 {
+		t.Fatalf("Expected error to be RedisError for node 1, got %q", errs[0])
+	}
+
+	nodeTaken, ok := errs[1].(NodeTaken)
+	if !ok || nodeTaken.Node != 3 {
+		t.Fatalf("Expected error to be NodeTaken for node 3, got %q", errs[1])
 	}
 }
 
