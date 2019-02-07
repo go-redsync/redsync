@@ -1,4 +1,4 @@
-module github.com/cabify/redsync
+module github.com/cabify/redsync/v2
 
 require (
 	github.com/gomodule/redigo v2.0.0+incompatible

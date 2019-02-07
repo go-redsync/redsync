@@ -32,7 +32,13 @@ type Mutex struct {
 	pools []Pool
 }
 
-// Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
+// Lock locks m. In case it returns an error on failure, you may retry to
+// acquire the lock by calling this method again.
+//
+// If not nil, the error will be either ErrTaken or a NoQuorum, which in turn
+// contains NodeTaken or RedisError.
+//
+// Only the last try's errors are returned.
 func (m *Mutex) Lock() error {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
@@ -42,6 +48,8 @@ func (m *Mutex) Lock() error {
 		return err
 	}
 
+	err = nil
+
 	for i := 0; i < m.tries; i++ {
 		if i != 0 {
 			time.Sleep(m.delayFunc(i))
@@ -49,7 +57,8 @@ func (m *Mutex) Lock() error {
 
 		start := time.Now()
 
-		n := m.actOnPoolsAsync(func(pool Pool) bool {
+		var n int
+		n, err = m.actOnPoolsAsync(func(pool Pool) (bool, error) {
 			return m.acquire(pool, value)
 		})
 
@@ -59,34 +68,46 @@ func (m *Mutex) Lock() error {
 			m.until = until
 			return nil
 		}
-		m.actOnPoolsAsync(func(pool Pool) bool {
+		m.actOnPoolsAsync(func(pool Pool) (bool, error) {
 			return m.release(pool, value)
 		})
 	}
 
-	return ErrFailed
+	return err
 }
 
-// Unlock unlocks m and returns the status of unlock.
-func (m *Mutex) Unlock() bool {
+// Unlock unlocks m.
+//
+// If not nil, the error will be either ErrTaken or a NoQuorum, which in turn
+// contains NodeTaken or RedisError.
+func (m *Mutex) Unlock() error {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
-	n := m.actOnPoolsAsync(func(pool Pool) bool {
+	n, errs := m.actOnPoolsAsync(func(pool Pool) (bool, error) {
 		return m.release(pool, m.value)
 	})
-	return n >= m.quorum
+	if n >= m.quorum {
+		return nil
+	}
+	return errs
 }
 
-// Extend resets the mutex's expiry and returns the status of expiry extension.
-func (m *Mutex) Extend() bool {
+// Extend resets the mutex's expiry.
+//
+// If not nil, the error will be either ErrTaken or a NoQuorum, which in turn
+// contains NodeTaken or RedisError.
+func (m *Mutex) Extend() error {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
-	n := m.actOnPoolsAsync(func(pool Pool) bool {
+	n, errs := m.actOnPoolsAsync(func(pool Pool) (bool, error) {
 		return m.touch(pool, m.value, int(m.expiry/time.Millisecond))
 	})
-	return n >= m.quorum
+	if n >= m.quorum {
+		return nil
+	}
+	return errs
 }
 
 func (m *Mutex) genValue() (string, error) {
@@ -98,11 +119,14 @@ func (m *Mutex) genValue() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func (m *Mutex) acquire(pool Pool, value string) bool {
+func (m *Mutex) acquire(pool Pool, value string) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
 	reply, err := redis.String(conn.Do("SET", m.name, value, "NX", "PX", int(m.expiry/time.Millisecond)))
-	return err == nil && reply == "OK"
+	if err != nil && err != redis.ErrNil {
+		return false, err
+	}
+	return reply == "OK", nil
 }
 
 var deleteScript = redis.NewScript(1, `
@@ -113,11 +137,14 @@ var deleteScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) release(pool Pool, value string) bool {
+func (m *Mutex) release(pool Pool, value string) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
 	status, err := deleteScript.Do(conn, m.name, value)
-	return err == nil && status != 0
+	if err != nil {
+		return false, err
+	}
+	return status != 0, nil
 }
 
 var touchScript = redis.NewScript(1, `
@@ -128,25 +155,49 @@ var touchScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) touch(pool Pool, value string, expiry int) bool {
+func (m *Mutex) touch(pool Pool, value string, expiry int) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
 	status, err := redis.String(touchScript.Do(conn, m.name, value, expiry))
-	return err == nil && status != "ERR"
+	if err != nil {
+		return false, err
+	}
+	return status != "ERR", nil
 }
 
-func (m *Mutex) actOnPoolsAsync(actFn func(Pool) bool) int {
-	ch := make(chan bool)
-	for _, pool := range m.pools {
-		go func(pool Pool) {
-			ch <- actFn(pool)
-		}(pool)
+func (m *Mutex) actOnPoolsAsync(actFn func(Pool) (bool, error)) (ok int, err error) {
+	type resp struct {
+		node int
+		ok   bool
+		err  error
 	}
-	n := 0
+
+	ch := make(chan resp)
+	for node, pool := range m.pools {
+		go func(node int, pool Pool) {
+			ok, err := actFn(pool)
+			ch <- resp{node: node, ok: ok, err: err}
+		}(node, pool)
+	}
+
+	var errs []error
+	hasRedisErrors := false
+
 	for range m.pools {
-		if <-ch {
-			n++
+		resp := <-ch
+		if err := resp.err; err != nil {
+			hasRedisErrors = true
+			errs = append(errs, RedisError{Node: resp.node, Err: err})
+		} else if !resp.ok {
+			errs = append(errs, NodeTaken{Node: resp.node})
+		} else {
+			ok++
 		}
 	}
-	return n
+
+	if !hasRedisErrors && len(errs) > 0 {
+		return ok, ErrTaken
+	}
+
+	return ok, NoQuorum(errs)
 }
