@@ -64,6 +64,14 @@ func (m *Mutex) Lock() error {
 		})
 	}
 
+	// check if lock is already acquired
+	n := m.actOnPoolsAsync(func(pool Pool) bool {
+		return m.isLockAlreadyAcquired(pool)
+	})
+	if n >= m.quorum {
+		return ErrLockAlreadyAcquired
+	}
+
 	return ErrFailed
 }
 
@@ -127,6 +135,13 @@ var touchScript = redis.NewScript(1, `
 		return "ERR"
 	end
 `)
+
+func (m *Mutex) isLockAlreadyAcquired(pool Pool) bool {
+	conn := pool.Get()
+	reply, err := conn.Do("GET", m.name)
+
+	return err == nil && reply != nil
+}
 
 func (m *Mutex) touch(pool Pool, value string, expiry int) bool {
 	conn := pool.Get()

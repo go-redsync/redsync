@@ -75,10 +75,28 @@ func TestMutexQuorum(t *testing.T) {
 			assertAcquired(t, pools, mutex)
 		} else {
 			err := mutex.Lock()
-			if err != ErrFailed {
+			if err != ErrFailed && err != ErrLockAlreadyAcquired {
 				t.Fatalf("Expected err == %q, got %q", ErrFailed, err)
 			}
 		}
+	}
+}
+
+func TestIsLockAlreadyAcquired(t *testing.T) {
+	pools := newMockPools(8)
+	rs := New(pools)
+
+	mutex1 := rs.NewMutex("test-shared-lock", SetExpiry(time.Hour))
+	err := mutex1.Lock()
+	if err != nil {
+		t.Error("Expected nil, got: ", err)
+	}
+	assertAcquired(t, pools, mutex1)
+
+	mutex2 := rs.NewMutex("test-shared-lock")
+	err = mutex2.Lock()
+	if err != ErrLockAlreadyAcquired {
+		t.Fatalf("Expected err == %q, got %q", ErrLockAlreadyAcquired, err)
 	}
 }
 
