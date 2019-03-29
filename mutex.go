@@ -24,8 +24,9 @@ type Mutex struct {
 
 	quorum int
 
-	value string
-	until time.Time
+	genValueFunc func() (string, error)
+	value        string
+	until        time.Time
 
 	nodem sync.Mutex
 
@@ -37,7 +38,7 @@ func (m *Mutex) Lock() error {
 	m.nodem.Lock()
 	defer m.nodem.Unlock()
 
-	value, err := m.genValue()
+	value, err := m.genValueFunc()
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func (m *Mutex) Extend() bool {
 	return n >= m.quorum
 }
 
-func (m *Mutex) genValue() (string, error) {
+func genValue() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {

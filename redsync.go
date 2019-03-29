@@ -17,13 +17,14 @@ func New(pools []Pool) *Redsync {
 // NewMutex returns a new distributed mutex with given name.
 func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 	m := &Mutex{
-		name:      name,
-		expiry:    8 * time.Second,
-		tries:     32,
-		delayFunc: func(tries int) time.Duration { return 500 * time.Millisecond },
-		factor:    0.01,
-		quorum:    len(r.pools)/2 + 1,
-		pools:     r.pools,
+		name:         name,
+		expiry:       8 * time.Second,
+		tries:        32,
+		delayFunc:    func(tries int) time.Duration { return 500 * time.Millisecond },
+		genValueFunc: genValue,
+		factor:       0.01,
+		quorum:       len(r.pools)/2 + 1,
+		pools:        r.pools,
 	}
 	for _, o := range options {
 		o.Apply(m)
@@ -78,5 +79,12 @@ func SetRetryDelayFunc(delayFunc DelayFunc) Option {
 func SetDriftFactor(factor float64) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.factor = factor
+	})
+}
+
+// SetGenValueFunc can be used to set the custom value generator.
+func SetGenValueFunc(genValueFunc func() (string, error)) Option {
+	return OptionFunc(func(m *Mutex) {
+		m.genValueFunc = genValueFunc
 	})
 }
