@@ -123,17 +123,17 @@ func (m *Mutex) release(pool Pool, value string) bool {
 
 var touchScript = redis.NewScript(1, `
 	if redis.call("GET", KEYS[1]) == ARGV[1] then
-		return redis.call("SET", KEYS[1], ARGV[1], "XX", "PX", ARGV[2])
+		return redis.call("pexpire", KEYS[1], ARGV[2])
 	else
-		return "ERR"
+		return 0
 	end
 `)
 
 func (m *Mutex) touch(pool Pool, value string, expiry int) bool {
 	conn := pool.Get()
 	defer conn.Close()
-	status, err := redis.String(touchScript.Do(conn, m.name, value, expiry))
-	return err == nil && status != "ERR"
+	status, err := touchScript.Do(conn, m.name, value, expiry)
+	return err == nil && status != 0
 }
 
 func (m *Mutex) actOnPoolsAsync(actFn func(Pool) bool) int {
