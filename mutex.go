@@ -3,7 +3,6 @@ package redsync
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"sync"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -28,16 +27,11 @@ type Mutex struct {
 	value        string
 	until        time.Time
 
-	nodem sync.Mutex
-
 	pools []Pool
 }
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) Lock() error {
-	m.nodem.Lock()
-	defer m.nodem.Unlock()
-
 	value, err := m.genValueFunc()
 	if err != nil {
 		return err
@@ -70,9 +64,6 @@ func (m *Mutex) Lock() error {
 
 // Unlock unlocks m and returns the status of unlock.
 func (m *Mutex) Unlock() bool {
-	m.nodem.Lock()
-	defer m.nodem.Unlock()
-
 	n := m.actOnPoolsAsync(func(pool Pool) bool {
 		return m.release(pool, m.value)
 	})
@@ -81,9 +72,6 @@ func (m *Mutex) Unlock() bool {
 
 // Extend resets the mutex's expiry and returns the status of expiry extension.
 func (m *Mutex) Extend() bool {
-	m.nodem.Lock()
-	defer m.nodem.Unlock()
-
 	n := m.actOnPoolsAsync(func(pool Pool) bool {
 		return m.touch(pool, m.value, int(m.expiry/time.Millisecond))
 	})
