@@ -106,7 +106,7 @@ func (m *Mutex) release(pool Pool, value string) bool {
 	conn := pool.Get()
 	defer conn.Close()
 	status, err := deleteScript.Do(conn, m.name, value)
-	return err == nil && status != 0
+	return err == nil && status != int64(0)
 }
 
 var touchScript = redis.NewScript(1, `
@@ -121,7 +121,7 @@ func (m *Mutex) touch(pool Pool, value string, expiry int) bool {
 	conn := pool.Get()
 	defer conn.Close()
 	status, err := touchScript.Do(conn, m.name, value, expiry)
-	return err == nil && status != 0
+	return err == nil && status != int64(0)
 }
 
 func (m *Mutex) actOnPoolsAsync(actFn func(Pool) bool) int {
