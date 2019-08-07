@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -28,7 +29,7 @@ func TestRedsync(t *testing.T) {
 	pools := newMockPools(8)
 	rs := New(pools)
 
-	mutex := rs.NewMutex("test-redsync")
+	mutex := rs.NewMutex(context.Background(), "test-redsync")
 	err := mutex.Lock()
 	if err != nil {
 

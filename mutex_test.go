@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"testing"
@@ -143,9 +144,10 @@ func newMockPools(n int) []Pool {
 }
 
 func getPoolValues(pools []Pool, name string) []string {
+	ctx := context.Background()
 	values := []string{}
 	for _, pool := range pools {
-		conn := pool.Get()
+		conn, _ := pool.GetContext(ctx)
 		value, err := redis.String(conn.Do("GET", name))
 		conn.Close()
 		if err != nil && err != redis.ErrNil {
@@ -157,9 +159,10 @@ func getPoolValues(pools []Pool, name string) []string {
 }
 
 func getPoolExpiries(pools []Pool, name string) []int {
+	ctx := context.Background()
 	expiries := []int{}
 	for _, pool := range pools {
-		conn := pool.Get()
+		conn, _ := pool.GetContext(ctx)
 		expiry, err := redis.Int(conn.Do("PTTL", name))
 		conn.Close()
 		if err != nil && err != redis.ErrNil {
@@ -171,13 +174,14 @@ func getPoolExpiries(pools []Pool, name string) []int {
 }
 
 func clogPools(pools []Pool, mask int, mutex *Mutex) int {
+	ctx := context.Background()
 	n := 0
 	for i, pool := range pools {
 		if mask&(1<<uint(i)) == 0 {
 			n++
 			continue
 		}
-		conn := pool.Get()
+		conn, _ := pool.GetContext(ctx)
 		_, err := conn.Do("SET", mutex.name, "foobar")
 		conn.Close()
 		if err != nil {

@@ -1,6 +1,9 @@
 package redsync
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // Redsync provides a simple method for creating distributed mutexes using multiple Redis connection pools.
 type Redsync struct {
@@ -15,10 +18,11 @@ func New(pools []Pool) *Redsync {
 }
 
 // NewMutex returns a new distributed mutex with given name.
-func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
+func (r *Redsync) NewMutex(ctx context.Context, name string, options ...Option) *Mutex {
 	m := &Mutex{
 		name:      name,
 		expiry:    8 * time.Second,
+		ctx:       ctx,
 		tries:     32,
 		delayFunc: func(tries int) time.Duration { return 500 * time.Millisecond },
 		factor:    0.01,

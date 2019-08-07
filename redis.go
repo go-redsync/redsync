@@ -1,8 +1,12 @@
 package redsync
 
-import "github.com/gomodule/redigo/redis"
+import (
+	"context"
+
+	"github.com/gomodule/redigo/redis"
+)
 
 // A Pool maintains a pool of Redis connections.
 type Pool interface {
-	Get() redis.Conn
+	GetContext(context.Context) (redis.Conn, error)
 }

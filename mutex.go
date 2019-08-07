@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"sync"
@@ -16,6 +17,7 @@ type DelayFunc func(tries int) time.Duration
 type Mutex struct {
 	name   string
 	expiry time.Duration
+	ctx    context.Context
 
 	tries     int
 	delayFunc DelayFunc
@@ -120,8 +122,11 @@ func (m *Mutex) genValue() (string, error) {
 }
 
 func (m *Mutex) acquire(pool Pool, value string) (bool, error) {
-	conn := pool.Get()
+	conn, err := pool.GetContext(m.ctx)
 	defer conn.Close()
+	if err != nil {
+		return false, err
+	}
 	reply, err := redis.String(conn.Do("SET", m.name, value, "NX", "PX", int(m.expiry/time.Millisecond)))
 	if err != nil && err != redis.ErrNil {
 		return false, err
@@ -138,8 +143,11 @@ var deleteScript = redis.NewScript(1, `
 `)
 
 func (m *Mutex) release(pool Pool, value string) (bool, error) {
-	conn := pool.Get()
+	conn, err := pool.GetContext(m.ctx)
 	defer conn.Close()
+	if err != nil {
+		return false, err
+	}
 	status, err := deleteScript.Do(conn, m.name, value)
 	if err != nil {
 		return false, err
@@ -156,8 +164,11 @@ var touchScript = redis.NewScript(1, `
 `)
 
 func (m *Mutex) touch(pool Pool, value string, expiry int) (bool, error) {
-	conn := pool.Get()
+	conn, err := pool.GetContext(m.ctx)
 	defer conn.Close()
+	if err != nil {
+		return false, err
+	}
 	status, err := redis.String(touchScript.Do(conn, m.name, value, expiry))
 	if err != nil {
 		return false, err
