@@ -48,8 +48,9 @@ func (m *Mutex) Lock() error {
 			return m.acquire(pool, value)
 		})
 
-		until := time.Now().Add(m.expiry - time.Now().Sub(start) - time.Duration(int64(float64(m.expiry)*m.factor)))
-		if n >= m.quorum && time.Now().Before(until) {
+		now := time.Now()
+		until := now.Add(m.expiry - now.Sub(start) - time.Duration(int64(float64(m.expiry)*m.factor)))
+		if n >= m.quorum && now.Before(until) {
 			m.value = value
 			m.until = until
 			return nil
