@@ -45,7 +45,10 @@ func TestMutexExtend(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	expiries := getPoolExpiries(pools, mutex.name)
-	ok := mutex.Extend()
+	ok, err := mutex.Extend()
+	if err != nil {
+		t.Fatalf("Expected err == nil, got %q", err)
+	}
 	if !ok {
 		t.Fatalf("Expected ok == true, got %v", ok)
 	}
