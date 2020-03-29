@@ -131,7 +131,11 @@ func TestValid(t *testing.T) {
 	}
 	assertAcquired(t, pools, mutex1)
 
-	if !mutex1.Valid() {
+	ok, err := mutex1.Valid()
+	if err != nil {
+		t.Fatalf("Expected err != nil, got: %q", err)
+	}
+	if !ok {
 		t.Fatalf("Expected a valid mutex")
 	}
 

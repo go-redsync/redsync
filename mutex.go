@@ -89,18 +89,21 @@ func (m *Mutex) Extend() (bool, error) {
 	return true, nil
 }
 
-func (m *Mutex) Valid() bool {
-	n := m.actOnPoolsAsync(func(pool Pool) bool {
+func (m *Mutex) Valid() (bool, error) {
+	n, err := m.actOnPoolsAsync(func(pool Pool) (bool, error) {
 		return m.valid(pool)
 	})
-	return n >= m.quorum
+	return n >= m.quorum, err
 }
 
-func (m *Mutex) valid(pool Pool) bool {
+func (m *Mutex) valid(pool Pool) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
 	reply, err := redis.String(conn.Do("GET", m.name))
-	return err == nil && m.value == reply
+	if err != nil {
+		return false, err
+	}
+	return m.value == reply, nil
 }
 
 func genValue() (string, error) {
