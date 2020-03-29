@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/hashicorp/go-multierror"
 )
 
 // A DelayFunc is used to decide the amount of time to wait between retries.
@@ -44,9 +45,12 @@ func (m *Mutex) Lock() error {
 
 		start := time.Now()
 
-		n := m.actOnPoolsAsync(func(pool Pool) bool {
+		n, err := m.actOnPoolsAsync(func(pool Pool) (bool, error) {
 			return m.acquire(pool, value)
 		})
+		if n == 0 && err != nil {
+			return err
+		}
 
 		now := time.Now()
 		until := now.Add(m.expiry - now.Sub(start) - time.Duration(int64(float64(m.expiry)*m.factor)))
@@ -55,7 +59,7 @@ func (m *Mutex) Lock() error {
 			m.until = until
 			return nil
 		}
-		m.actOnPoolsAsync(func(pool Pool) bool {
+		m.actOnPoolsAsync(func(pool Pool) (bool, error) {
 			return m.release(pool, value)
 		})
 	}
@@ -64,19 +68,25 @@ func (m *Mutex) Lock() error {
 }
 
 // Unlock unlocks m and returns the status of unlock.
-func (m *Mutex) Unlock() bool {
-	n := m.actOnPoolsAsync(func(pool Pool) bool {
+func (m *Mutex) Unlock() (bool, error) {
+	n, err := m.actOnPoolsAsync(func(pool Pool) (bool, error) {
 		return m.release(pool, m.value)
 	})
-	return n >= m.quorum
+	if n < m.quorum {
+		return false, err
+	}
+	return true, nil
 }
 
 // Extend resets the mutex's expiry and returns the status of expiry extension.
-func (m *Mutex) Extend() bool {
-	n := m.actOnPoolsAsync(func(pool Pool) bool {
+func (m *Mutex) Extend() (bool, error) {
+	n, err := m.actOnPoolsAsync(func(pool Pool) (bool, error) {
 		return m.touch(pool, m.value, int(m.expiry/time.Millisecond))
 	})
-	return n >= m.quorum
+	if n < m.quorum {
+		return false, err
+	}
+	return true, nil
 }
 
 func genValue() (string, error) {
@@ -88,11 +98,17 @@ func genValue() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func (m *Mutex) acquire(pool Pool, value string) bool {
+func (m *Mutex) acquire(pool Pool, value string) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
 	reply, err := redis.String(conn.Do("SET", m.name, value, "NX", "PX", int(m.expiry/time.Millisecond)))
-	return err == nil && reply == "OK"
+	if err != nil {
+		if err == redis.ErrNil {
+			return false, nil
+		}
+		return false, err
+	}
+	return reply == "OK", nil
 }
 
 var deleteScript = redis.NewScript(1, `
@@ -103,12 +119,12 @@ var deleteScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) release(pool Pool, value string) bool {
+func (m *Mutex) release(pool Pool, value string) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
 	status, err := redis.Int64(deleteScript.Do(conn, m.name, value))
 
-	return err == nil && status != 0
+	return err == nil && status != 0, err
 }
 
 var touchScript = redis.NewScript(1, `
@@ -119,26 +135,37 @@ var touchScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) touch(pool Pool, value string, expiry int) bool {
+func (m *Mutex) touch(pool Pool, value string, expiry int) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
 	status, err := redis.Int64(touchScript.Do(conn, m.name, value, expiry))
 
-	return err == nil && status != 0
+	return err == nil && status != 0, err
 }
 
-func (m *Mutex) actOnPoolsAsync(actFn func(Pool) bool) int {
-	ch := make(chan bool)
+func (m *Mutex) actOnPoolsAsync(actFn func(Pool) (bool, error)) (int, error) {
+	type result struct {
+		Status bool
+		Err    error
+	}
+
+	ch := make(chan result)
 	for _, pool := range m.pools {
 		go func(pool Pool) {
-			ch <- actFn(pool)
+			r := result{}
+			r.Status, r.Err = actFn(pool)
+			ch <- r
 		}(pool)
 	}
 	n := 0
+	var err error
 	for range m.pools {
-		if <-ch {
+		r := <-ch
+		if r.Status {
 			n++
+		} else if r.Err != nil {
+			err = multierror.Append(err, r.Err)
 		}
 	}
-	return n
+	return n, err
 }
