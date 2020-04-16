@@ -1,4 +1,4 @@
-module github.com/go-redsync/redsync
+module github.com/go-redsync/redsync/v2
 
 go 1.13
 
