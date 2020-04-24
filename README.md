@@ -16,6 +16,62 @@ The only dependencies are the Go distribution and [Redigo](https://github.com/go
 
 - [Reference](https://godoc.org/github.com/go-redsync/redsync)
 
+## Usage
+
+Error handling is simplified to `panic` for shorter example.
+
+```go
+package main
+
+import (
+	"github.com/go-redsync/redsync"
+	"github.com/gomodule/redigo/redis"
+)
+
+func main() {
+	// Create a pool with redigo which is the pool redisync will use while
+	// communicating with Redis. This can be any pool that implements the `Pool`
+	// interface which just requres a `Get()` method that returns a
+	// `redis.Conn`.
+	redisPool := &redis.Pool{
+		Dial: func() (redis.Conn, error) {
+			return redis.DialURL("redis://localhost:6379/0")
+		},
+	}
+
+	// Ensure we're connected to Redis before we try to obtain the lock.
+	if _, err := redisPool.Get().Do("PING"); err != nil {
+		panic(err)
+	}
+
+	// Create an instance of redisync to be used to obtain a mutual exclusion
+	// lock.
+	rs := redsync.New([]redsync.Pool{pool})
+
+	// Obtain a new mutex by using the same name for all instances wanting the
+	// same lock.
+	mutexName := "my-global-mutex"
+	mutex := rs.NewMutex(mutexName)
+
+	// Obtain a lock for our given mutex. After this is successful, no one else
+	// can obtain the same lock (the same mutex name) until we unlock it.
+	if err := mutex.Lock(); err != nil {
+		panic(err)
+	}
+
+	// Do your work that requires the lock. Use any preferred way to query the
+	// Redis database.
+	if _, err := pool.Get().Do("SET", "some-key-to-be-set", 1); err != nil {
+		panic(err)
+	}
+
+	// Release the lock so other processess or threads can obtain a lock.
+	if ok, err := mutex.Unlock(); !ok || err != nil {
+		panic("unlock failed")
+	}
+}
+```
+
 ## Contributing
 
 Contributions are welcome.
