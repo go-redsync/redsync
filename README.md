@@ -30,6 +30,8 @@ package main
 
 import (
 	"github.com/go-redsync/redsync"
+	"github.com/go-redsync/redsync/v3/redis"
+	"github.com/go-redsync/redsync/v3/redis/redigo"
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -48,15 +50,17 @@ func main() {
 	if _, err := redisPool.Get().Do("PING"); err != nil {
 		panic(err)
 	}
+	
 
 	// Create an instance of redisync to be used to obtain a mutual exclusion
 	// lock.
-	rs := redsync.New([]redsync.Pool{pool})
+	pool := goredis.NewGoredisPool(client) // or, pool := redigo.NewRedigoPool(...)
+	rs := redsync.New([]redis.Pool{pool})
 
 	// Obtain a new mutex by using the same name for all instances wanting the
 	// same lock.
-	mutexName := "my-global-mutex"
-	mutex := rs.NewMutex(mutexName)
+	mutexname := "my-global-mutex"
+	mutex := rs.NewMutex(mutexname)
 
 	// Obtain a lock for our given mutex. After this is successful, no one else
 	// can obtain the same lock (the same mutex name) until we unlock it.
