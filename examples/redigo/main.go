@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/go-redsync/redsync"
+	"github.com/go-redsync/redsync/v3"
 	"github.com/go-redsync/redsync/v3/redis"
 	"github.com/go-redsync/redsync/v3/redis/redigo"
 	redigolib "github.com/gomodule/redigo/redis"
