@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/go-redsync/redsync/v3"
-	"github.com/go-redsync/redsync/v3/redis"
 	"github.com/go-redsync/redsync/v3/redis/redigo"
 	redigolib "github.com/gomodule/redigo/redis"
 	"github.com/stvp/tempredis"
@@ -29,7 +28,7 @@ func main() {
 		},
 	})
 
-	rs := redsync.New([]redis.Pool{pool})
+	rs := redsync.New(pool)
 
 	mutex := rs.NewMutex("test-redsync")
 

@@ -96,7 +96,7 @@ func TestMutexQuorum(t *testing.T) {
 func TestValid(t *testing.T) {
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
-			rs := New(v.pools)
+			rs := New(v.pools...)
 			key := "test-shared-lock"
 
 			mutex1 := rs.NewMutex(key, SetExpiry(time.Hour))

@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 func TestRedsync(t *testing.T) {
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
-			rs := New(v.pools)
+			rs := New(v.pools...)
 
 			mutex := rs.NewMutex("test-redsync")
 			_ = mutex.Lock()

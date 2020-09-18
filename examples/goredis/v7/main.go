@@ -5,7 +5,6 @@ import (
 
 	goredislib "github.com/go-redis/redis/v7"
 	"github.com/go-redsync/redsync/v3"
-	"github.com/go-redsync/redsync/v3/redis"
 	"github.com/go-redsync/redsync/v3/redis/goredis/v7"
 	"github.com/stvp/tempredis"
 )
@@ -24,7 +23,7 @@ func main() {
 
 	pool := goredis.NewPool(client)
 
-	rs := redsync.New([]redis.Pool{pool})
+	rs := redsync.New(pool)
 
 	mutex := rs.NewMutex("test-redsync")
 	ctx := context.Background()
