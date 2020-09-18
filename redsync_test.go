@@ -17,7 +17,7 @@ var servers []*tempredis.Server
 
 type testCase struct {
 	poolCount int
-	pool      []redis.Pool
+	pools     []redis.Pool
 }
 
 func makeCases(poolCount int) map[string]*testCase {
@@ -33,7 +33,7 @@ func makeCases(poolCount int) map[string]*testCase {
 	}
 }
 
-// Maintain seprate blocks of servers for each type of driver
+// Maintain separate blocks of servers for each type of driver
 const SERVER_POOLS = 2
 const SERVER_POOL_SIZE = 8
 const REDIGO_BLOCK = 0
@@ -50,7 +50,7 @@ func TestMain(m *testing.M) {
 	}
 	result := m.Run()
 	for _, server := range servers {
-		server.Term()
+		_ = server.Term()
 	}
 	os.Exit(result)
 }
@@ -58,65 +58,49 @@ func TestMain(m *testing.M) {
 func TestRedsync(t *testing.T) {
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
-			rs := New(v.pool)
+			rs := New(v.pools)
 
 			mutex := rs.NewMutex("test-redsync")
-			err := mutex.Lock()
-			if err != nil {
+			_ = mutex.Lock()
 
-			}
-
-			assertAcquired(t, v.pool, mutex)
+			assertAcquired(t, v.pools, mutex)
 		})
 	}
 }
 
 func newMockPoolsRedigo(n int) []redis.Pool {
-	pools := []redis.Pool{}
+	pools := make([]redis.Pool, n)
 
 	offset := REDIGO_BLOCK * SERVER_POOL_SIZE
 
-	for i := offset; i < offset+SERVER_POOL_SIZE; i++ {
-		func(server *tempredis.Server) {
-			pools = append(pools, redigo.NewRedigoPool(&redigolib.Pool{
-				MaxIdle:     3,
-				IdleTimeout: 240 * time.Second,
-				Dial: func() (redigolib.Conn, error) {
-					return redigolib.Dial("unix", server.Socket())
-				},
-				TestOnBorrow: func(c redigolib.Conn, t time.Time) error {
-					_, err := c.Do("PING")
-					return err
-				},
-			}))
-		}(servers[i])
-		if len(pools) == n {
-			break
-		}
-
+	for i := 0; i < n; i++ {
+		server := servers[i+offset]
+		pools[i] = redigo.NewRedigoPool(&redigolib.Pool{
+			MaxIdle:     3,
+			IdleTimeout: 240 * time.Second,
+			Dial: func() (redigolib.Conn, error) {
+				return redigolib.Dial("unix", server.Socket())
+			},
+			TestOnBorrow: func(c redigolib.Conn, t time.Time) error {
+				_, err := c.Do("PING")
+				return err
+			},
+		})
 	}
 	return pools
 }
 
 func newMockPoolsGoredis(n int) []redis.Pool {
-	pools := []redis.Pool{}
+	pools := make([]redis.Pool, n)
 
 	offset := GOREDIS_BLOCK * SERVER_POOL_SIZE
 
-	for i := offset; i < offset+SERVER_POOL_SIZE; i++ {
-		func(server *tempredis.Server) {
-
-			client := goredislib.NewClient(&goredislib.Options{
-				Network: "unix",
-				Addr:    server.Socket(),
-			})
-
-			pools = append(pools, goredis.NewGoredisPool(client))
-		}(servers[i])
-		if len(pools) == n {
-			break
-		}
-
+	for i := 0; i < n; i++ {
+		client := goredislib.NewClient(&goredislib.Options{
+			Network: "unix",
+			Addr:    servers[i+offset].Socket(),
+		})
+		pools[i] = goredis.NewGoredisPool(client)
 	}
 	return pools
 }

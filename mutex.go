@@ -59,7 +59,7 @@ func (m *Mutex) Lock() error {
 			m.until = until
 			return nil
 		}
-		m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
+		_, _ = m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 			return m.release(pool, value)
 		})
 	}
@@ -145,7 +145,7 @@ func (m *Mutex) release(pool redis.Pool, value string) (bool, error) {
 
 var touchScript = redis.NewScript(1, `
 	if redis.call("GET", KEYS[1]) == ARGV[1] then
-		return redis.call("pexpire", KEYS[1], ARGV[2])
+		return redis.call("PEXPIRE", KEYS[1], ARGV[2])
 	else
 		return 0
 	end

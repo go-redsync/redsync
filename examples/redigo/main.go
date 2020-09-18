@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-
 	server, err := tempredis.Start(tempredis.Config{})
 	if err != nil {
 		panic(err)
@@ -33,11 +32,12 @@ func main() {
 	rs := redsync.New([]redis.Pool{pool})
 
 	mutex := rs.NewMutex("test-redsync")
-	err = mutex.Lock()
 
-	if err != nil {
+	if err = mutex.Lock(); err != nil {
 		panic(err)
 	}
 
-	mutex.Unlock()
+	if _, err = mutex.Unlock(); err != nil {
+		panic(err)
+	}
 }

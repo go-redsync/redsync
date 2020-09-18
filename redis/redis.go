@@ -29,6 +29,6 @@ type Script struct {
 
 func NewScript(keyCount int, src string) *Script {
 	h := sha1.New()
-	io.WriteString(h, src)
+	_, _ = io.WriteString(h, src)
 	return &Script{keyCount, src, hex.EncodeToString(h.Sum(nil))}
 }
