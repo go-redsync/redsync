@@ -127,7 +127,7 @@ func getPoolValues(pools []redis.Pool, name string) []string {
 	values := make([]string, len(pools))
 	for i, pool := range pools {
 		conn := pool.Get()
-		value, err := conn.Get(name)
+		value, err := conn.Get(nil, name)
 		if err != nil {
 			panic(err)
 		}
@@ -141,7 +141,7 @@ func getPoolExpiries(pools []redis.Pool, name string) []int {
 	expiries := make([]int, len(pools))
 	for i, pool := range pools {
 		conn := pool.Get()
-		expiry, err := conn.PTTL(name)
+		expiry, err := conn.PTTL(nil, name)
 		if err != nil {
 			panic(err)
 		}
@@ -159,7 +159,7 @@ func clogPools(pools []redis.Pool, mask int, mutex *Mutex) int {
 			continue
 		}
 		conn := pool.Get()
-		_, err := conn.Set(mutex.name, "foobar")
+		_, err := conn.Set(nil, mutex.name, "foobar")
 		if err != nil {
 			panic(err)
 		}

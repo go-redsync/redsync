@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"time"
@@ -33,6 +34,11 @@ type Mutex struct {
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) Lock() error {
+	return m.LockContext(nil)
+}
+
+// Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
+func (m *Mutex) LockContext(ctx context.Context) error {
 	value, err := m.genValueFunc()
 	if err != nil {
 		return err
@@ -46,7 +52,7 @@ func (m *Mutex) Lock() error {
 		start := time.Now()
 
 		n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
-			return m.acquire(pool, value)
+			return m.acquire(ctx, pool, value)
 		})
 		if n == 0 && err != nil {
 			return err
@@ -60,7 +66,7 @@ func (m *Mutex) Lock() error {
 			return nil
 		}
 		_, _ = m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
-			return m.release(pool, value)
+			return m.release(ctx, pool, value)
 		})
 	}
 
@@ -69,8 +75,13 @@ func (m *Mutex) Lock() error {
 
 // Unlock unlocks m and returns the status of unlock.
 func (m *Mutex) Unlock() (bool, error) {
+	return m.UnlockContext(nil)
+}
+
+// Unlock unlocks m and returns the status of unlock.
+func (m *Mutex) UnlockContext(ctx context.Context) (bool, error) {
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
-		return m.release(pool, m.value)
+		return m.release(ctx, pool, m.value)
 	})
 	if n < m.quorum {
 		return false, err
@@ -80,8 +91,13 @@ func (m *Mutex) Unlock() (bool, error) {
 
 // Extend resets the mutex's expiry and returns the status of expiry extension.
 func (m *Mutex) Extend() (bool, error) {
+	return m.ExtendContext(nil)
+}
+
+// Extend resets the mutex's expiry and returns the status of expiry extension.
+func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
-		return m.touch(pool, m.value, int(m.expiry/time.Millisecond))
+		return m.touch(ctx, pool, m.value, int(m.expiry/time.Millisecond))
 	})
 	if n < m.quorum {
 		return false, err
@@ -90,16 +106,20 @@ func (m *Mutex) Extend() (bool, error) {
 }
 
 func (m *Mutex) Valid() (bool, error) {
+	return m.ValidContext(nil)
+}
+
+func (m *Mutex) ValidContext(ctx context.Context) (bool, error) {
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
-		return m.valid(pool)
+		return m.valid(ctx, pool)
 	})
 	return n >= m.quorum, err
 }
 
-func (m *Mutex) valid(pool redis.Pool) (bool, error) {
+func (m *Mutex) valid(ctx context.Context, pool redis.Pool) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
-	reply, err := conn.Get(m.name)
+	reply, err := conn.Get(ctx, m.name)
 	if err != nil {
 		return false, err
 	}
@@ -115,10 +135,10 @@ func genValue() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
 
-func (m *Mutex) acquire(pool redis.Pool, value string) (bool, error) {
+func (m *Mutex) acquire(ctx context.Context, pool redis.Pool, value string) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
-	reply, err := conn.SetNX(m.name, value, m.expiry)
+	reply, err := conn.SetNX(ctx, m.name, value, m.expiry)
 	if err != nil {
 		return false, err
 	}
@@ -133,10 +153,10 @@ var deleteScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) release(pool redis.Pool, value string) (bool, error) {
+func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
-	status, err := conn.Eval(deleteScript, m.name, value)
+	status, err := conn.Eval(ctx, deleteScript, m.name, value)
 	if err != nil {
 		return false, err
 	}
@@ -151,10 +171,10 @@ var touchScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) touch(pool redis.Pool, value string, expiry int) (bool, error) {
+func (m *Mutex) touch(ctx context.Context, pool redis.Pool, value string, expiry int) (bool, error) {
 	conn := pool.Get()
 	defer conn.Close()
-	status, err := conn.Eval(touchScript, m.name, value, expiry)
+	status, err := conn.Eval(ctx, touchScript, m.name, value, expiry)
 	if err != nil {
 		return false, err
 	}

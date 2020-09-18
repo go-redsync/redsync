@@ -1,6 +1,7 @@
 package goredis
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -24,27 +25,27 @@ type GoredisConn struct {
 	delegate *redis.Client
 }
 
-func (self *GoredisConn) Get(name string) (string, error) {
-	value, err := self.delegate.Get(name).Result()
+func (self *GoredisConn) Get(ctx context.Context, name string) (string, error) {
+	value, err := self.client(ctx).Get(name).Result()
 	return value, noErrNil(err)
 }
 
-func (self *GoredisConn) Set(name string, value string) (bool, error) {
-	reply, err := self.delegate.Set(name, value, 0).Result()
+func (self *GoredisConn) Set(ctx context.Context, name string, value string) (bool, error) {
+	reply, err := self.client(ctx).Set(name, value, 0).Result()
 	return reply == "OK", noErrNil(err)
 }
 
-func (self *GoredisConn) SetNX(name string, value string, expiry time.Duration) (bool, error) {
-	ok, err := self.delegate.SetNX(name, value, expiry).Result()
+func (self *GoredisConn) SetNX(ctx context.Context, name string, value string, expiry time.Duration) (bool, error) {
+	ok, err := self.client(ctx).SetNX(name, value, expiry).Result()
 	return ok, noErrNil(err)
 }
 
-func (self *GoredisConn) PTTL(name string) (time.Duration, error) {
-	expiry, err := self.delegate.PTTL(name).Result()
+func (self *GoredisConn) PTTL(ctx context.Context, name string) (time.Duration, error) {
+	expiry, err := self.client(ctx).PTTL(name).Result()
 	return expiry, noErrNil(err)
 }
 
-func (self *GoredisConn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
+func (self *GoredisConn) Eval(ctx context.Context, script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
 	keys := make([]string, script.KeyCount)
 	args := keysAndArgs
 
@@ -56,9 +57,10 @@ func (self *GoredisConn) Eval(script *redsyncredis.Script, keysAndArgs ...interf
 		args = keysAndArgs[script.KeyCount:]
 	}
 
-	v, err := self.delegate.EvalSha(script.Hash, keys, args...).Result()
+	cli := self.client(ctx)
+	v, err := cli.EvalSha(script.Hash, keys, args...).Result()
 	if err != nil && strings.HasPrefix(err.Error(), "NOSCRIPT ") {
-		v, err = self.delegate.Eval(script.Src, keys, args...).Result()
+		v, err = cli.Eval(script.Src, keys, args...).Result()
 	}
 	return v, noErrNil(err)
 }
@@ -66,6 +68,13 @@ func (self *GoredisConn) Eval(script *redsyncredis.Script, keysAndArgs ...interf
 func (self *GoredisConn) Close() error {
 	// Not needed for this library
 	return nil
+}
+
+func (self *GoredisConn) client(ctx context.Context) *redis.Client {
+	if ctx != nil {
+		return self.delegate.WithContext(ctx)
+	}
+	return self.delegate
 }
 
 func noErrNil(err error) error {
