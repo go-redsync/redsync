@@ -117,7 +117,10 @@ func (m *Mutex) ValidContext(ctx context.Context) (bool, error) {
 }
 
 func (m *Mutex) valid(ctx context.Context, pool redis.Pool) (bool, error) {
-	conn := pool.Get()
+	conn, err := pool.Get(ctx)
+	if err != nil {
+		return false, err
+	}
 	defer conn.Close()
 	reply, err := conn.Get(ctx, m.name)
 	if err != nil {
@@ -136,7 +139,10 @@ func genValue() (string, error) {
 }
 
 func (m *Mutex) acquire(ctx context.Context, pool redis.Pool, value string) (bool, error) {
-	conn := pool.Get()
+	conn, err := pool.Get(ctx)
+	if err != nil {
+		return false, err
+	}
 	defer conn.Close()
 	reply, err := conn.SetNX(ctx, m.name, value, m.expiry)
 	if err != nil {
@@ -154,7 +160,10 @@ var deleteScript = redis.NewScript(1, `
 `)
 
 func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (bool, error) {
-	conn := pool.Get()
+	conn, err := pool.Get(ctx)
+	if err != nil {
+		return false, err
+	}
 	defer conn.Close()
 	status, err := conn.Eval(ctx, deleteScript, m.name, value)
 	if err != nil {
@@ -172,7 +181,10 @@ var touchScript = redis.NewScript(1, `
 `)
 
 func (m *Mutex) touch(ctx context.Context, pool redis.Pool, value string, expiry int) (bool, error) {
-	conn := pool.Get()
+	conn, err := pool.Get(ctx)
+	if err != nil {
+		return false, err
+	}
 	defer conn.Close()
 	status, err := conn.Eval(ctx, touchScript, m.name, value, expiry)
 	if err != nil {

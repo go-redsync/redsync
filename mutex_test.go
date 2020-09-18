@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"context"
 	"strconv"
 	"testing"
 	"time"
@@ -126,8 +127,11 @@ func TestValid(t *testing.T) {
 func getPoolValues(pools []redis.Pool, name string) []string {
 	values := make([]string, len(pools))
 	for i, pool := range pools {
-		conn := pool.Get()
-		value, err := conn.Get(nil, name)
+		conn, err := pool.Get(context.TODO())
+		if err != nil {
+			panic(err)
+		}
+		value, err := conn.Get(context.TODO(), name)
 		if err != nil {
 			panic(err)
 		}
@@ -140,8 +144,11 @@ func getPoolValues(pools []redis.Pool, name string) []string {
 func getPoolExpiries(pools []redis.Pool, name string) []int {
 	expiries := make([]int, len(pools))
 	for i, pool := range pools {
-		conn := pool.Get()
-		expiry, err := conn.PTTL(nil, name)
+		conn, err := pool.Get(context.TODO())
+		if err != nil {
+			panic(err)
+		}
+		expiry, err := conn.PTTL(context.TODO(), name)
 		if err != nil {
 			panic(err)
 		}
@@ -158,8 +165,11 @@ func clogPools(pools []redis.Pool, mask int, mutex *Mutex) int {
 			n++
 			continue
 		}
-		conn := pool.Get()
-		_, err := conn.Set(nil, mutex.name, "foobar")
+		conn, err := pool.Get(context.TODO())
+		if err != nil {
+			panic(err)
+		}
+		_, err = conn.Set(context.TODO(), mutex.name, "foobar")
 		if err != nil {
 			panic(err)
 		}
