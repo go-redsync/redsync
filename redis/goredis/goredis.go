@@ -9,43 +9,43 @@ import (
 	redsyncredis "github.com/go-redsync/redsync/v3/redis"
 )
 
-type GoredisPool struct {
+type pool struct {
 	delegate *redis.Client
 }
 
-func (p *GoredisPool) Get() redsyncredis.Conn {
-	return &GoredisConn{p.delegate}
+func (p *pool) Get() redsyncredis.Conn {
+	return &conn{p.delegate}
 }
 
-func NewGoredisPool(delegate *redis.Client) *GoredisPool {
-	return &GoredisPool{delegate}
+func NewPool(delegate *redis.Client) redsyncredis.Pool {
+	return &pool{delegate}
 }
 
-type GoredisConn struct {
+type conn struct {
 	delegate *redis.Client
 }
 
-func (c *GoredisConn) Get(ctx context.Context, name string) (string, error) {
+func (c *conn) Get(ctx context.Context, name string) (string, error) {
 	value, err := c.client(ctx).Get(name).Result()
 	return value, noErrNil(err)
 }
 
-func (c *GoredisConn) Set(ctx context.Context, name string, value string) (bool, error) {
+func (c *conn) Set(ctx context.Context, name string, value string) (bool, error) {
 	reply, err := c.client(ctx).Set(name, value, 0).Result()
 	return reply == "OK", noErrNil(err)
 }
 
-func (c *GoredisConn) SetNX(ctx context.Context, name string, value string, expiry time.Duration) (bool, error) {
+func (c *conn) SetNX(ctx context.Context, name string, value string, expiry time.Duration) (bool, error) {
 	ok, err := c.client(ctx).SetNX(name, value, expiry).Result()
 	return ok, noErrNil(err)
 }
 
-func (c *GoredisConn) PTTL(ctx context.Context, name string) (time.Duration, error) {
+func (c *conn) PTTL(ctx context.Context, name string) (time.Duration, error) {
 	expiry, err := c.client(ctx).PTTL(name).Result()
 	return expiry, noErrNil(err)
 }
 
-func (c *GoredisConn) Eval(ctx context.Context, script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
+func (c *conn) Eval(ctx context.Context, script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
 	keys := make([]string, script.KeyCount)
 	args := keysAndArgs
 
@@ -65,12 +65,12 @@ func (c *GoredisConn) Eval(ctx context.Context, script *redsyncredis.Script, key
 	return v, noErrNil(err)
 }
 
-func (c *GoredisConn) Close() error {
+func (c *conn) Close() error {
 	// Not needed for this library
 	return nil
 }
 
-func (c *GoredisConn) client(ctx context.Context) *redis.Client {
+func (c *conn) client(ctx context.Context) *redis.Client {
 	if ctx != nil {
 		return c.delegate.WithContext(ctx)
 	}

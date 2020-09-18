@@ -16,7 +16,7 @@ func main() {
 	}
 	defer server.Term()
 
-	pool := redigo.NewRedigoPool(&redigolib.Pool{
+	pool := redigo.NewPool(&redigolib.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redigolib.Conn, error) {

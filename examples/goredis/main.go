@@ -19,7 +19,7 @@ func main() {
 		Addr:    server.Socket(),
 	})
 
-	pool := goredis.NewGoredisPool(client)
+	pool := goredis.NewPool(client)
 
 	rs := redsync.New(pool)
 

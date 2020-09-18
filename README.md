@@ -53,7 +53,7 @@ func main() {
 
 	// Create an instance of redsync to be used to obtain a mutual exclusion
 	// lock.
-	pool := goredis.NewGoredisPool(client) // or, pool := redigo.NewRedigoPool(...)
+	pool := goredis.NewPool(client) // or, pool := redigo.NewPool(...)
 	rs := redsync.New(pool)
 
 	// Obtain a new mutex by using the same name for all instances wanting the
