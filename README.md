@@ -29,32 +29,21 @@ Error handling is simplified to `panic` for shorter example.
 package main
 
 import (
-	"github.com/go-redsync/redsync"
+	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
 )
 
 func main() {
-	// Create a pool with redigo which is the pool redsync will use while
-	// communicating with Redis. This can be any pool that implements the `Pool`
-	// interface which just requires a `Get()` method that returns a
-	// `redis.Conn`.
-	redisPool := &redis.Pool{
-		Dial: func() (redis.Conn, error) {
-			return redis.DialURL("redis://localhost:6379/0")
-		},
-	}
-
-	// Ensure we're connected to Redis before we try to obtain the lock.
-	if _, err := redisPool.Get().Do("PING"); err != nil {
-		panic(err)
-	}
-
-	// Create an instance of redsync to be used to obtain a mutual exclusion
+	// Create a pool with go-redis (or redigo) which is the pool redisync will 
+	// use while communicating with Redis. This can also be any pool that
+	// implements the `redis.Pool` interface.
+	pool := goredis.NewGoredisPool(client) // or, pool := redigo.NewRedigoPool(...)
+	
+	// Create an instance of redisync to be used to obtain a mutual exclusion
 	// lock.
-	pool := goredis.NewPool(client) // or, pool := redigo.NewPool(...)
-	rs := redsync.New(pool)
+	rs := redsync.New([]redis.Pool{pool})
 
 	// Obtain a new mutex by using the same name for all instances wanting the
 	// same lock.
