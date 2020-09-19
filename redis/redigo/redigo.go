@@ -9,52 +9,52 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-type RedigoPool struct {
+type pool struct {
 	delegate *redis.Pool
 }
 
-func (self *RedigoPool) Get() redsyncredis.Conn {
-	return &RedigoConn{self.delegate.Get()}
+func (p *pool) Get() redsyncredis.Conn {
+	return &conn{p.delegate.Get()}
 }
 
-func NewRedigoPool(delegate *redis.Pool) *RedigoPool {
-	return &RedigoPool{delegate}
+func NewPool(delegate *redis.Pool) redsyncredis.Pool {
+	return &pool{delegate}
 }
 
-type RedigoConn struct {
+type conn struct {
 	delegate redis.Conn
 }
 
-func (self *RedigoConn) Get(_ context.Context, name string) (string, error) {
-	value, err := redis.String(self.delegate.Do("GET", name))
+func (c *conn) Get(_ context.Context, name string) (string, error) {
+	value, err := redis.String(c.delegate.Do("GET", name))
 	return value, noErrNil(err)
 }
 
-func (self *RedigoConn) Set(_ context.Context, name string, value string) (bool, error) {
-	reply, err := redis.String(self.delegate.Do("SET", name, value))
+func (c *conn) Set(_ context.Context, name string, value string) (bool, error) {
+	reply, err := redis.String(c.delegate.Do("SET", name, value))
 	return reply == "OK", noErrNil(err)
 }
 
-func (self *RedigoConn) SetNX(_ context.Context, name string, value string, expiry time.Duration) (bool, error) {
-	reply, err := redis.String(self.delegate.Do("SET", name, value, "NX", "PX", int(expiry/time.Millisecond)))
+func (c *conn) SetNX(_ context.Context, name string, value string, expiry time.Duration) (bool, error) {
+	reply, err := redis.String(c.delegate.Do("SET", name, value, "NX", "PX", int(expiry/time.Millisecond)))
 	return reply == "OK", noErrNil(err)
 }
 
-func (self *RedigoConn) PTTL(_ context.Context, name string) (time.Duration, error) {
-	expiry, err := redis.Int64(self.delegate.Do("PTTL", name))
+func (c *conn) PTTL(_ context.Context, name string) (time.Duration, error) {
+	expiry, err := redis.Int64(c.delegate.Do("PTTL", name))
 	return time.Duration(expiry) * time.Millisecond, noErrNil(err)
 }
 
-func (self *RedigoConn) Eval(_ context.Context, script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
-	v, err := self.delegate.Do("EVALSHA", args(script, script.Hash, keysAndArgs)...)
+func (c *conn) Eval(_ context.Context, script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
+	v, err := c.delegate.Do("EVALSHA", args(script, script.Hash, keysAndArgs)...)
 	if e, ok := err.(redis.Error); ok && strings.HasPrefix(string(e), "NOSCRIPT ") {
-		v, err = self.delegate.Do("EVAL", args(script, script.Src, keysAndArgs)...)
+		v, err = c.delegate.Do("EVAL", args(script, script.Src, keysAndArgs)...)
 	}
 	return v, noErrNil(err)
 }
 
-func (self *RedigoConn) Close() error {
-	err := self.delegate.Close()
+func (c *conn) Close() error {
+	err := c.delegate.Close()
 	return noErrNil(err)
 }
 

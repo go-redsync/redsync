@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 func TestRedsync(t *testing.T) {
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
-			rs := New(v.pools)
+			rs := New(v.pools...)
 
 			mutex := rs.NewMutex("test-redsync")
 			_ = mutex.Lock()
@@ -88,7 +88,7 @@ func newMockPoolsRedigo(n int) []redis.Pool {
 
 	for i := 0; i < n; i++ {
 		server := servers[i+offset]
-		pools[i] = redigo.NewRedigoPool(&redigolib.Pool{
+		pools[i] = redigo.NewPool(&redigolib.Pool{
 			MaxIdle:     3,
 			IdleTimeout: 240 * time.Second,
 			Dial: func() (redigolib.Conn, error) {
@@ -113,7 +113,7 @@ func newMockPoolsGoredis(n int) []redis.Pool {
 			Network: "unix",
 			Addr:    servers[i+offset].Socket(),
 		})
-		pools[i] = goredis.NewGoredisPool(client)
+		pools[i] = goredis.NewPool(client)
 	}
 	return pools
 }
