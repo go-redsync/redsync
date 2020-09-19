@@ -3,7 +3,7 @@ package redsync
 import (
 	"time"
 
-	"github.com/go-redsync/redsync/v3/redis"
+	"github.com/go-redsync/redsync/v4/redis"
 )
 
 // Redsync provides a simple method for creating distributed mutexes using multiple Redis connection pools.

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	goredislib "github.com/go-redis/redis/v7"
-	"github.com/go-redsync/redsync/v3"
-	"github.com/go-redsync/redsync/v3/redis/goredis/v7"
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v7"
 	"github.com/stvp/tempredis"
 )
 

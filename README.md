@@ -30,8 +30,8 @@ package main
 
 import (
 	"github.com/go-redsync/redsync"
-	"github.com/go-redsync/redsync/v3/redis"
-	"github.com/go-redsync/redsync/v3/redis/redigo"
+	"github.com/go-redsync/redsync/v4/redis"
+	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
 )
 
