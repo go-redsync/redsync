@@ -10,7 +10,7 @@ import (
 
 // A Pool maintains a pool of Redis connections.
 type Pool interface {
-	Get() Conn
+	Get(ctx context.Context) (Conn, error)
 }
 
 type Conn interface {

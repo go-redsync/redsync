@@ -13,8 +13,12 @@ type pool struct {
 	delegate *redis.Pool
 }
 
-func (p *pool) Get() redsyncredis.Conn {
-	return &conn{p.delegate.Get()}
+func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
+	c, err := p.delegate.GetContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &conn{c}, nil
 }
 
 func NewPool(delegate *redis.Pool) redsyncredis.Pool {
