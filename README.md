@@ -10,11 +10,11 @@ Install Redsync using the go get command:
 
     $ go get github.com/go-redsync/redsync
 
-Two driver implementations will be installed; however, only the one used will be include in your project.
+Two driver implementations will be installed; however, only the one used will be included in your project.
 
  * [Redigo](https://github.com/gomodule/redigo)
  * [Go-redis](https://github.com/go-redis/redis)
- 
+
 See the [examples](examples) folder for usage of each driver.
 
 ## Documentation
@@ -36,9 +36,9 @@ import (
 )
 
 func main() {
-	// Create a pool with redigo which is the pool redisync will use while
+	// Create a pool with redigo which is the pool redsync will use while
 	// communicating with Redis. This can be any pool that implements the `Pool`
-	// interface which just requres a `Get()` method that returns a
+	// interface which just requires a `Get()` method that returns a
 	// `redis.Conn`.
 	redisPool := &redis.Pool{
 		Dial: func() (redis.Conn, error) {
@@ -50,9 +50,8 @@ func main() {
 	if _, err := redisPool.Get().Do("PING"); err != nil {
 		panic(err)
 	}
-	
 
-	// Create an instance of redisync to be used to obtain a mutual exclusion
+	// Create an instance of redsync to be used to obtain a mutual exclusion
 	// lock.
 	pool := goredis.NewGoredisPool(client) // or, pool := redigo.NewRedigoPool(...)
 	rs := redsync.New([]redis.Pool{pool})
@@ -74,7 +73,7 @@ func main() {
 		panic(err)
 	}
 
-	// Release the lock so other processess or threads can obtain a lock.
+	// Release the lock so other processes or threads can obtain a lock.
 	if ok, err := mutex.Unlock(); !ok || err != nil {
 		panic("unlock failed")
 	}

@@ -1,10 +1,12 @@
 package main
 
 import (
-	goredislib "github.com/go-redis/redis"
+	"context"
+
+	goredislib "github.com/go-redis/redis/v7"
 	"github.com/go-redsync/redsync/v3"
 	"github.com/go-redsync/redsync/v3/redis"
-	"github.com/go-redsync/redsync/v3/redis/goredis"
+	"github.com/go-redsync/redsync/v3/redis/goredis/v7"
 	"github.com/stvp/tempredis"
 )
 
@@ -20,17 +22,18 @@ func main() {
 		Addr:    server.Socket(),
 	})
 
-	pool := goredis.NewGoredisPool(client)
+	pool := goredis.NewPool(client)
 
 	rs := redsync.New([]redis.Pool{pool})
 
 	mutex := rs.NewMutex("test-redsync")
+	ctx := context.Background()
 
-	if err = mutex.Lock(); err != nil {
+	if err := mutex.LockContext(ctx); err != nil {
 		panic(err)
 	}
 
-	if _, err = mutex.Unlock(); err != nil {
+	if _, err := mutex.UnlockContext(ctx); err != nil {
 		panic(err)
 	}
 }
