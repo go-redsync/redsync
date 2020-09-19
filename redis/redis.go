@@ -14,11 +14,11 @@ type Pool interface {
 }
 
 type Conn interface {
-	Get(ctx context.Context, name string) (string, error)
-	Set(ctx context.Context, name string, value string) (bool, error)
-	SetNX(ctx context.Context, name string, value string, expiry time.Duration) (bool, error)
-	Eval(ctx context.Context, script *Script, keysAndArgs ...interface{}) (interface{}, error)
-	PTTL(ctx context.Context, name string) (time.Duration, error)
+	Get(name string) (string, error)
+	Set(name string, value string) (bool, error)
+	SetNX(name string, value string, expiry time.Duration) (bool, error)
+	Eval(script *Script, keysAndArgs ...interface{}) (interface{}, error)
+	PTTL(name string) (time.Duration, error)
 	Close() error
 }
 

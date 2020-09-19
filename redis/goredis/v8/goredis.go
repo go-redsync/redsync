@@ -14,7 +14,10 @@ type pool struct {
 }
 
 func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
-	return &conn{p.delegate}, nil
+	if ctx == nil {
+		ctx = p.delegate.Context()
+	}
+	return &conn{p.delegate, ctx}, nil
 }
 
 func NewPool(delegate *redis.Client) redsyncredis.Pool {
@@ -23,27 +26,28 @@ func NewPool(delegate *redis.Client) redsyncredis.Pool {
 
 type conn struct {
 	delegate *redis.Client
+	ctx      context.Context
 }
 
-func (c *conn) Get(ctx context.Context, name string) (string, error) {
-	value, err := c.delegate.Get(c._context(ctx), name).Result()
+func (c *conn) Get(name string) (string, error) {
+	value, err := c.delegate.Get(c.ctx, name).Result()
 	return value, noErrNil(err)
 }
 
-func (c *conn) Set(ctx context.Context, name string, value string) (bool, error) {
-	reply, err := c.delegate.Set(c._context(ctx), name, value, 0).Result()
+func (c *conn) Set(name string, value string) (bool, error) {
+	reply, err := c.delegate.Set(c.ctx, name, value, 0).Result()
 	return reply == "OK", err
 }
 
-func (c *conn) SetNX(ctx context.Context, name string, value string, expiry time.Duration) (bool, error) {
-	return c.delegate.SetNX(c._context(ctx), name, value, expiry).Result()
+func (c *conn) SetNX(name string, value string, expiry time.Duration) (bool, error) {
+	return c.delegate.SetNX(c.ctx, name, value, expiry).Result()
 }
 
-func (c *conn) PTTL(ctx context.Context, name string) (time.Duration, error) {
-	return c.delegate.PTTL(c._context(ctx), name).Result()
+func (c *conn) PTTL(name string) (time.Duration, error) {
+	return c.delegate.PTTL(c.ctx, name).Result()
 }
 
-func (c *conn) Eval(ctx context.Context, script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
+func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
 	keys := make([]string, script.KeyCount)
 	args := keysAndArgs
 
@@ -54,10 +58,9 @@ func (c *conn) Eval(ctx context.Context, script *redsyncredis.Script, keysAndArg
 		args = keysAndArgs[script.KeyCount:]
 	}
 
-	ctx = c._context(ctx)
-	v, err := c.delegate.EvalSha(ctx, script.Hash, keys, args...).Result()
+	v, err := c.delegate.EvalSha(c.ctx, script.Hash, keys, args...).Result()
 	if err != nil && strings.HasPrefix(err.Error(), "NOSCRIPT ") {
-		v, err = c.delegate.Eval(ctx, script.Src, keys, args...).Result()
+		v, err = c.delegate.Eval(c.ctx, script.Src, keys, args...).Result()
 	}
 	return v, noErrNil(err)
 }
