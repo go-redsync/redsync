@@ -122,7 +122,7 @@ func (m *Mutex) valid(ctx context.Context, pool redis.Pool) (bool, error) {
 		return false, err
 	}
 	defer conn.Close()
-	reply, err := conn.Get(ctx, m.name)
+	reply, err := conn.Get(m.name)
 	if err != nil {
 		return false, err
 	}
@@ -144,7 +144,7 @@ func (m *Mutex) acquire(ctx context.Context, pool redis.Pool, value string) (boo
 		return false, err
 	}
 	defer conn.Close()
-	reply, err := conn.SetNX(ctx, m.name, value, m.expiry)
+	reply, err := conn.SetNX(m.name, value, m.expiry)
 	if err != nil {
 		return false, err
 	}
@@ -165,7 +165,7 @@ func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (boo
 		return false, err
 	}
 	defer conn.Close()
-	status, err := conn.Eval(ctx, deleteScript, m.name, value)
+	status, err := conn.Eval(deleteScript, m.name, value)
 	if err != nil {
 		return false, err
 	}
@@ -186,7 +186,7 @@ func (m *Mutex) touch(ctx context.Context, pool redis.Pool, value string, expiry
 		return false, err
 	}
 	defer conn.Close()
-	status, err := conn.Eval(ctx, touchScript, m.name, value, expiry)
+	status, err := conn.Eval(touchScript, m.name, value, expiry)
 	if err != nil {
 		return false, err
 	}

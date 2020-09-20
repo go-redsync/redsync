@@ -14,7 +14,11 @@ type pool struct {
 }
 
 func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
-	return &conn{p.delegate}, nil
+	c := p.delegate
+	if ctx != nil {
+		c = c.WithContext(ctx)
+	}
+	return &conn{c}, nil
 }
 
 func NewPool(delegate *redis.Client) redsyncredis.Pool {
@@ -25,25 +29,25 @@ type conn struct {
 	delegate *redis.Client
 }
 
-func (c *conn) Get(ctx context.Context, name string) (string, error) {
-	value, err := c.client(ctx).Get(name).Result()
+func (c *conn) Get(name string) (string, error) {
+	value, err := c.delegate.Get(name).Result()
 	return value, noErrNil(err)
 }
 
-func (c *conn) Set(ctx context.Context, name string, value string) (bool, error) {
-	reply, err := c.client(ctx).Set(name, value, 0).Result()
+func (c *conn) Set(name string, value string) (bool, error) {
+	reply, err := c.delegate.Set(name, value, 0).Result()
 	return reply == "OK", err
 }
 
-func (c *conn) SetNX(ctx context.Context, name string, value string, expiry time.Duration) (bool, error) {
-	return c.client(ctx).SetNX(name, value, expiry).Result()
+func (c *conn) SetNX(name string, value string, expiry time.Duration) (bool, error) {
+	return c.delegate.SetNX(name, value, expiry).Result()
 }
 
-func (c *conn) PTTL(ctx context.Context, name string) (time.Duration, error) {
-	return c.client(ctx).PTTL(name).Result()
+func (c *conn) PTTL(name string) (time.Duration, error) {
+	return c.delegate.PTTL(name).Result()
 }
 
-func (c *conn) Eval(ctx context.Context, script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
+func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
 	keys := make([]string, script.KeyCount)
 	args := keysAndArgs
 
@@ -54,10 +58,9 @@ func (c *conn) Eval(ctx context.Context, script *redsyncredis.Script, keysAndArg
 		args = keysAndArgs[script.KeyCount:]
 	}
 
-	cli := c.client(ctx)
-	v, err := cli.EvalSha(script.Hash, keys, args...).Result()
+	v, err := c.delegate.EvalSha(script.Hash, keys, args...).Result()
 	if err != nil && strings.HasPrefix(err.Error(), "NOSCRIPT ") {
-		v, err = cli.Eval(script.Src, keys, args...).Result()
+		v, err = c.delegate.Eval(script.Src, keys, args...).Result()
 	}
 	return v, noErrNil(err)
 }
