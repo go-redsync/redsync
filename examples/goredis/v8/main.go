@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 
 	goredislib "github.com/go-redis/redis/v8"
 	"github.com/go-redsync/redsync/v4"
@@ -34,5 +35,10 @@ func main() {
 
 	if _, err := mutex.UnlockContext(ctx); err != nil {
 		panic(err)
+	}
+	if _, err = mutex.Unlock(); err != nil {
+		if !errors.Is(err, redsync.ErrTryToReleaseOthersLock) {
+			panic(err)
+		}
 	}
 }

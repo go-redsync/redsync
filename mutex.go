@@ -4,11 +4,14 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"time"
 
 	"github.com/go-redsync/redsync/v4/redis"
 	"github.com/hashicorp/go-multierror"
 )
+
+var ErrTryToReleaseOthersLock = errors.New("try to release others lock")
 
 // A DelayFunc is used to decide the amount of time to wait between retries.
 type DelayFunc func(tries int) time.Duration
@@ -169,7 +172,10 @@ func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (boo
 	if err != nil {
 		return false, err
 	}
-	return status != 0, nil
+	if status == int64(0) {
+		return false, ErrTryToReleaseOthersLock
+	}
+	return true, nil
 }
 
 var touchScript = redis.NewScript(1, `
