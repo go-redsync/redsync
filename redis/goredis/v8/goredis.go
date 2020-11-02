@@ -10,22 +10,22 @@ import (
 )
 
 type pool struct {
-	delegate *redis.Client
+	delegate redis.Cmdable
 }
 
 func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
 	if ctx == nil {
-		ctx = p.delegate.Context()
+		ctx = context.Background()
 	}
 	return &conn{p.delegate, ctx}, nil
 }
 
-func NewPool(delegate *redis.Client) redsyncredis.Pool {
+func NewPool(delegate redis.Cmdable) redsyncredis.Pool {
 	return &pool{delegate}
 }
 
 type conn struct {
-	delegate *redis.Client
+	delegate redis.Cmdable
 	ctx      context.Context
 }
 
@@ -68,13 +68,6 @@ func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (in
 func (c *conn) Close() error {
 	// Not needed for this library
 	return nil
-}
-
-func (c *conn) _context(ctx context.Context) context.Context {
-	if ctx != nil {
-		return ctx
-	}
-	return c.delegate.Context()
 }
 
 func noErrNil(err error) error {
