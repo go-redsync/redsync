@@ -66,6 +66,58 @@ func TestMutexExtend(t *testing.T) {
 	}
 }
 
+func TestMutexExtendExpired(t *testing.T) {
+	for k, v := range makeCases(8) {
+		t.Run(k, func(t *testing.T) {
+			mutexes := newTestMutexes(v.pools, "test-mutex-extend", 1)
+			mutex := mutexes[0]
+			mutex.expiry = 500 * time.Millisecond
+
+			err := mutex.Lock()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
+			}
+			defer mutex.Unlock()
+
+			time.Sleep(1 * time.Second)
+
+			ok, err := mutex.Extend()
+			if err != nil {
+				t.Fatalf("mutex extend failed: %s", err)
+			}
+			if ok {
+				t.Fatalf("Expected ok == false, got %v", ok)
+			}
+		})
+	}
+}
+
+func TestMutexUnlockExpired(t *testing.T) {
+	for k, v := range makeCases(8) {
+		t.Run(k, func(t *testing.T) {
+			mutexes := newTestMutexes(v.pools, "test-mutex-extend", 1)
+			mutex := mutexes[0]
+			mutex.expiry = 500 * time.Millisecond
+
+			err := mutex.Lock()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
+			}
+			defer mutex.Unlock()
+
+			time.Sleep(1 * time.Second)
+
+			ok, err := mutex.Unlock()
+			if err != nil {
+				t.Fatalf("mutex unlock failed: %s", err)
+			}
+			if ok {
+				t.Fatalf("Expected ok == false, got %v", ok)
+			}
+		})
+	}
+}
+
 func TestMutexQuorum(t *testing.T) {
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
