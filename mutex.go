@@ -32,6 +32,11 @@ type Mutex struct {
 	pools []redis.Pool
 }
 
+// Name returns mutex name equals to redis key.
+func (m *Mutex) Name() string {
+	return m.name
+}
+
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) Lock() error {
 	return m.LockContext(nil)
