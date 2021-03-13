@@ -179,7 +179,7 @@ func TestMutexLockUnlockSplit(t *testing.T) {
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
 			rs := New(v.pools...)
-			key := "test-shared-lock"
+			key := "test-split-lock"
 
 			mutex1 := rs.NewMutex(key, WithExpiry(time.Hour))
 			err := mutex1.Lock()
