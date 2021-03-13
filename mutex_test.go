@@ -175,6 +175,31 @@ func TestValid(t *testing.T) {
 	}
 }
 
+func TestMutexLockUnlockSplit(t *testing.T) {
+	for k, v := range makeCases(4) {
+		t.Run(k, func(t *testing.T) {
+			rs := New(v.pools...)
+			key := "test-shared-lock"
+
+			mutex1 := rs.NewMutex(key, WithExpiry(time.Hour))
+			err := mutex1.Lock()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
+			}
+			assertAcquired(t, v.pools, mutex1)
+
+			mutex2 := rs.NewMutex(key, WithExpiry(time.Hour), WithValue(mutex1.Value()))
+			ok, err := mutex2.Unlock()
+			if err != nil {
+				t.Fatalf("mutex unlock failed: %s", err)
+			}
+			if !ok {
+				t.Fatalf("Expected a valid mutex")
+			}
+		})
+	}
+}
+
 func getPoolValues(pools []redis.Pool, name string) []string {
 	values := make([]string, len(pools))
 	for i, pool := range pools {

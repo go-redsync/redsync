@@ -32,9 +32,14 @@ type Mutex struct {
 	pools []redis.Pool
 }
 
-// Name returns mutex name equals to redis key.
+// Name returns mutex name (i.e. the Redis key).
 func (m *Mutex) Name() string {
 	return m.name
+}
+
+// Value returns the current random value. The value will be empty until a lock is acquired (or WithValue option is used).
+func (m *Mutex) Value() string {
+	return m.value
 }
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
