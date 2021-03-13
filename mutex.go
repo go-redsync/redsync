@@ -122,6 +122,9 @@ func (m *Mutex) ValidContext(ctx context.Context) (bool, error) {
 }
 
 func (m *Mutex) valid(ctx context.Context, pool redis.Pool) (bool, error) {
+	if m.value == "" {
+		return false, nil
+	}
 	conn, err := pool.Get(ctx)
 	if err != nil {
 		return false, err
