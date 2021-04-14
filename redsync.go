@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"math/rand"
 	"time"
 
 	"github.com/go-redsync/redsync/v4/redis"
@@ -24,7 +25,7 @@ func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 		name:         name,
 		expiry:       8 * time.Second,
 		tries:        32,
-		delayFunc:    func(tries int) time.Duration { return 500 * time.Millisecond },
+		delayFunc:    func(tries int) time.Duration { return time.Duration(rand.Intn(500-100)+100) * time.Millisecond },
 		genValueFunc: genValue,
 		factor:       0.01,
 		quorum:       len(r.pools)/2 + 1,
