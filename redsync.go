@@ -1,9 +1,15 @@
 package redsync
 
 import (
+	"math/rand"
 	"time"
 
 	"github.com/go-redsync/redsync/v4/redis"
+)
+
+const (
+	minRetryDelayMilliSec = 50
+	maxRetryDelayMilliSec = 250
 )
 
 // Redsync provides a simple method for creating distributed mutexes using multiple Redis connection pools.
@@ -21,10 +27,12 @@ func New(pools ...redis.Pool) *Redsync {
 // NewMutex returns a new distributed mutex with given name.
 func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 	m := &Mutex{
-		name:         name,
-		expiry:       8 * time.Second,
-		tries:        32,
-		delayFunc:    func(tries int) time.Duration { return 500 * time.Millisecond },
+		name:   name,
+		expiry: 8 * time.Second,
+		tries:  32,
+		delayFunc: func(tries int) time.Duration {
+			return time.Duration(rand.Intn(maxRetryDelayMilliSec-minRetryDelayMilliSec)+minRetryDelayMilliSec) * time.Millisecond
+		},
 		genValueFunc: genValue,
 		factor:       0.01,
 		quorum:       len(r.pools)/2 + 1,
