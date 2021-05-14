@@ -15,6 +15,7 @@ type Pool interface {
 
 type Conn interface {
 	Get(name string) (string, error)
+	HGet(name, field string) (string, error)
 	Set(name string, value string) (bool, error)
 	SetNX(name string, value string, expiry time.Duration) (bool, error)
 	Eval(script *Script, keysAndArgs ...interface{}) (interface{}, error)

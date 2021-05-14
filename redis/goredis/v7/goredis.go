@@ -34,6 +34,11 @@ func (c *conn) Get(name string) (string, error) {
 	return value, noErrNil(err)
 }
 
+func (c *conn) HGet(name, field string) (string, error) {
+	value, err := c.delegate.HGet(name, field).Result()
+	return value, noErrNil(err)
+}
+
 func (c *conn) Set(name string, value string) (bool, error) {
 	reply, err := c.delegate.Set(name, value, 0).Result()
 	return reply == "OK", err

@@ -14,13 +14,13 @@ const (
 
 // Redsync provides a simple method for creating distributed mutexes using multiple Redis connection pools.
 type Redsync struct {
-	pools []redis.Pool
+	pools redis.Pool
 }
 
 // New creates and returns a new Redsync instance from given Redis connection pools.
 func New(pools ...redis.Pool) *Redsync {
 	return &Redsync{
-		pools: pools,
+		pools: pools[0],
 	}
 }
 
@@ -28,14 +28,14 @@ func New(pools ...redis.Pool) *Redsync {
 func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 	m := &Mutex{
 		name:   name,
-		expiry: 8 * time.Second,
+		expiry: 5 * time.Second,
 		tries:  32,
 		delayFunc: func(tries int) time.Duration {
 			return time.Duration(rand.Intn(maxRetryDelayMilliSec-minRetryDelayMilliSec)+minRetryDelayMilliSec) * time.Millisecond
 		},
 		genValueFunc: genValue,
-		factor:       0.01,
-		quorum:       len(r.pools)/2 + 1,
+		factor:       0.1, //500ms
+		quorum:       1,
 		pools:        r.pools,
 	}
 	for _, o := range options {
@@ -101,9 +101,9 @@ func WithGenValueFunc(genValueFunc func() (string, error)) Option {
 	})
 }
 
-// WithValue can be used to assign the random value without having to call lock. This allows the ownership of a lock to be "transfered" and allows the lock to be unlocked from elsewhere.
-func WithValue(v string) Option {
+// WithVersion can be used to assign the random value without having to call lock. This allows the ownership of a lock to be "transfered" and allows the lock to be unlocked from elsewhere.
+func WithVersion(v int64) Option {
 	return OptionFunc(func(m *Mutex) {
-		m.value = v
+		m.version = v
 	})
 }

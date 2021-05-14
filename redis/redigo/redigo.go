@@ -37,6 +37,11 @@ func (c *conn) Get(name string) (string, error) {
 	return value, noErrNil(err)
 }
 
+func (c *conn) HGet(name, field string) (string, error) {
+	value, err := redis.String(c.delegate.Do("HGET", name, field))
+	return value, noErrNil(err)
+}
+
 func (c *conn) Set(name string, value string) (bool, error) {
 	reply, err := redis.String(c.delegate.Do("SET", name, value))
 	return reply == "OK", noErrNil(err)

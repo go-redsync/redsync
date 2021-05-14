@@ -25,6 +25,7 @@ type testCase struct {
 }
 
 func makeCases(poolCount int) map[string]*testCase {
+	poolCount = 1
 	return map[string]*testCase{
 		"redigo": {
 			poolCount,
