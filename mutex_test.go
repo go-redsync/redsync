@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-redsync/redsync/v4/redis"
+	"github.com/weylan/redsync/redis"
 )
 
 func TestMutex(t *testing.T) {

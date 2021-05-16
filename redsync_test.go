@@ -8,13 +8,13 @@ import (
 	goredislib "github.com/go-redis/redis"
 	goredislib_v7 "github.com/go-redis/redis/v7"
 	goredislib_v8 "github.com/go-redis/redis/v8"
-	"github.com/go-redsync/redsync/v4/redis"
-	"github.com/go-redsync/redsync/v4/redis/goredis"
-	goredis_v7 "github.com/go-redsync/redsync/v4/redis/goredis/v7"
-	goredis_v8 "github.com/go-redsync/redsync/v4/redis/goredis/v8"
-	"github.com/go-redsync/redsync/v4/redis/redigo"
 	redigolib "github.com/gomodule/redigo/redis"
 	"github.com/stvp/tempredis"
+	"github.com/weylan/redsync/redis"
+	"github.com/weylan/redsync/redis/goredis"
+	goredis_v7 "github.com/weylan/redsync/redis/goredis/v7"
+	goredis_v8 "github.com/weylan/redsync/redis/goredis/v8"
+	"github.com/weylan/redsync/redis/redigo"
 )
 
 var servers []*tempredis.Server

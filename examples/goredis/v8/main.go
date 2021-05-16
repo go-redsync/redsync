@@ -4,9 +4,9 @@ import (
 	"context"
 
 	goredislib "github.com/go-redis/redis/v8"
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
 	"github.com/stvp/tempredis"
+	"github.com/weylan/redsync"
+	"github.com/weylan/redsync/redis/goredis/v8"
 )
 
 func main() {

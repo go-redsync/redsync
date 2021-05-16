@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	redsyncredis "github.com/go-redsync/redsync/v4/redis"
+	redsyncredis "github.com/weylan/redsync/redis"
 )
 
 type pool struct {
