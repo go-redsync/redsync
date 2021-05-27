@@ -100,6 +100,14 @@ func (m *Mutex) Valid() (bool, error) {
 	return m.ValidContext(nil)
 }
 
+func (m *Mutex) SetVersion(version int64) (bool, error) {
+	return m.update(nil, m.pools, version)
+}
+
+func (m *Mutex) SetVersionContext(ctx context.Context, version int64) (bool, error) {
+	return m.update(ctx, m.pools, version)
+}
+
 func (m *Mutex) ValidContext(ctx context.Context) (bool, error) {
 	return m.valid(ctx, m.pools)
 }
@@ -250,6 +258,44 @@ func (m *Mutex) touch(ctx context.Context, pool redis.Pool, expiry int) (bool, e
 	status, err := conn.Eval(touchScript, m.name, int(m.version), expiry)
 	if err != nil {
 		return false, err
+	}
+	return status != int64(0), nil
+}
+
+var updateScript = redis.NewScript(1, `
+	local key = KEYS[1]
+	local result = redis.call("HMGET", key, "version", "expire")
+	local value = result[1]
+	local expire = result[2]
+	
+	if type(value) == "string" then
+		value = tonumber(value)
+	end
+
+	if value == -1 * ARGV[1] then
+		local cur = redis.call("time")[1]
+		if cur > expire then
+			return 0
+		end
+		redis.call("HSET", key, "version", -1 * ARGV[2])
+		return value * -1
+	else
+		return 0
+	end
+`)
+
+func (m *Mutex) update(ctx context.Context, pool redis.Pool, newVersion int64) (bool, error) {
+	conn, err := pool.Get(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer conn.Close()
+	status, err := conn.Eval(updateScript, m.name, int(m.version), int(newVersion))
+	if err != nil {
+		return false, err
+	}
+	if status != 0 {
+		m.version = newVersion
 	}
 	return status != int64(0), nil
 }
