@@ -156,7 +156,6 @@ func TestValid(t *testing.T) {
 			if err != nil {
 				t.Fatalf("mutex lock failed: %s", err)
 			}
-			defer mutex1.Unlock()
 			assertAcquired(t, v.pools, mutex1)
 
 			ok, err := mutex1.Valid()
@@ -170,7 +169,7 @@ func TestValid(t *testing.T) {
 			mutex2 := rs.NewMutex(key)
 			err = mutex2.Lock()
 			if err == nil {
-				t.Fatalf("mutex lock failed: %s", err)
+				t.Fatalf("mutex need lock failed: %d m1:%d", mutex2.version, mutex1.version)
 			}
 		})
 	}
@@ -220,6 +219,40 @@ func TestMutexLockUnlockSplit(t *testing.T) {
 			if !ok {
 				t.Fatalf("Expected a valid mutex")
 			}
+		})
+	}
+}
+
+func TestMutexLockUnlockVersion(t *testing.T) {
+	for k, v := range makeCases(4) {
+		t.Run(k, func(t *testing.T) {
+			rs := New(v.pools...)
+			key := "test-release-lock-verison"
+
+			mutex1 := rs.NewMutex(key, WithExpiry(time.Hour))
+			err := mutex1.Lock()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
+			}
+			assertAcquired(t, v.pools, mutex1)
+
+			mutex2 := rs.NewMutex(key, WithExpiry(time.Hour), WithVersion(mutex1.version))
+			ok, err := mutex2.UnlockVersion(100)
+			if err != nil {
+				t.Fatalf("mutex unlock failed: %s", err)
+			}
+			if !ok {
+				t.Fatalf("Expected a valid mutex")
+			}
+			ok, err = mutex1.SetVersion(100)
+			if err != nil {
+				t.Fatalf("mutex unlock failed: %s", err)
+			}
+			if ok {
+				t.Fatalf("Expected wrong")
+			}
+			mutex2.version *= -1
+			assertAcquired(t, v.pools, mutex2)
 		})
 	}
 }

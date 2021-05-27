@@ -70,7 +70,7 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 			m.until = until
 			return nil
 		}
-		m.release(ctx, m.pools)
+		//m.release(ctx, m.pools, m.version+1)
 	}
 
 	return ErrFailed
@@ -83,7 +83,15 @@ func (m *Mutex) Unlock() (bool, error) {
 
 // UnlockContext unlocks m and returns the status of unlock.
 func (m *Mutex) UnlockContext(ctx context.Context) (bool, error) {
-	return m.release(ctx, m.pools)
+	return m.release(ctx, m.pools, m.version+1)
+}
+
+func (m *Mutex) UnlockVersion(version int64) (bool, error) {
+	return m.release(nil, m.pools, version)
+}
+
+func (m *Mutex) UnlockVersionContext(ctx context.Context, version int64) (bool, error) {
+	return m.release(ctx, m.pools, version)
 }
 
 // Extend resets the mutex's expiry and returns the status of expiry extension.
@@ -202,29 +210,29 @@ var releaseScript = redis.NewScript(1, `
 	end
 
 	if value == -1 * ARGV[1] then
-		value = ARGV[1] + 1
+		value = ARGV[2]
 	else
-		return -1 * value
+		return 0
 	end
 
 	redis.call("HMSET", key, "version", value, "expire", 0)
-	return value
+	return 1
 `)
 
-func (m *Mutex) release(ctx context.Context, pool redis.Pool) (bool, error) {
+func (m *Mutex) release(ctx context.Context, pool redis.Pool, newVersion int64) (bool, error) {
 	conn, err := pool.Get(ctx)
 	if err != nil {
 		return false, err
 	}
 	defer conn.Close()
-	status, err := conn.Eval(releaseScript, m.name, int(m.version))
+	status, err := conn.Eval(releaseScript, m.name, int(m.version), int(newVersion))
 	if err != nil {
 		return false, err
 	}
-	if version, ok := status.(int64); ok && version != 0 {
-		return m.version+1 == version, nil
+	if status != 0 {
+		m.version = newVersion
 	}
-	return status != int64(0), nil
+	return status != 0, nil
 }
 
 var touchScript = redis.NewScript(1, `
