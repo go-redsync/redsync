@@ -101,7 +101,7 @@ func (m *Mutex) Extend() (bool, error) {
 
 // ExtendContext resets the mutex's expiry and returns the status of expiry extension.
 func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
-	return m.touch(ctx, m.pools, int(m.expiry/time.Second))
+	return m.touch(ctx, m.pools, int(m.expiry/time.Millisecond))
 }
 
 func (m *Mutex) Valid() (bool, error) {
@@ -152,12 +152,17 @@ func genValue() (string, error) {
 var lockScript = redis.NewScript(1, `
 	local key = KEYS[1]
 	local result = redis.call("HMGET", key, "version", "expire")
-	local cur = redis.call("time")[1]
+	local t = redis.call("time")
+	local cur = t[1] * 1000 + t[2] / 1000
 	local value = result[1]
 	local expire = result[2]
 
 	if type(value) == "string" then
 		value = tonumber(value)
+	end
+
+	if type(expire) == "string" then
+		expire = tonumber(expire)
 	end
 
 	if value and value <= 0 and cur <= expire then
@@ -181,7 +186,7 @@ func (m *Mutex) acquire(ctx context.Context, pool redis.Pool) (bool, error) {
 		return false, err
 	}
 	defer conn.Close()
-	status, err := conn.Eval(lockScript, m.name, int(m.expiry/time.Second))
+	status, err := conn.Eval(lockScript, m.name, int(m.expiry/time.Millisecond))
 	if err != nil {
 		return false, err
 	}
@@ -245,8 +250,13 @@ var touchScript = redis.NewScript(1, `
 		value = tonumber(value)
 	end
 
+	if type(expire) == "string" then
+		expire = tonumber(expire)
+	end
+
 	if value == -1 * ARGV[1] then
-		local cur = redis.call("time")[1]
+		local t = redis.call("time")
+		local cur = t[1] * 1000 + t[2] / 1000
 		if cur > expire then
 			return 0
 		end
@@ -279,9 +289,14 @@ var updateScript = redis.NewScript(1, `
 	if type(value) == "string" then
 		value = tonumber(value)
 	end
+	
+	if type(expire) == "string" then
+		expire = tonumber(expire)
+	end
 
 	if value == -1 * ARGV[1] then
-		local cur = redis.call("time")[1]
+		local t = redis.call("time")
+		local cur = t[1] * 1000 + t[2] / 1000
 		if cur > expire then
 			return 0
 		end
