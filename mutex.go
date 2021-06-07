@@ -49,6 +49,10 @@ func (m *Mutex) Lock() error {
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) LockContext(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	value, err := m.genValueFunc()
 	if err != nil {
 		return err
@@ -56,7 +60,13 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 
 	for i := 0; i < m.tries; i++ {
 		if i != 0 {
-			time.Sleep(m.delayFunc(i))
+			select {
+			case <-ctx.Done():
+				// Exit early if the context is done.
+				return ErrFailed
+			case <-time.After(m.delayFunc(i)):
+				// Fall-through when the delay timer completes.
+			}
 		}
 
 		start := time.Now()
