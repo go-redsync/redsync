@@ -49,6 +49,10 @@ func (m *Mutex) Lock() error {
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) LockContext(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	value, err := m.genValueFunc()
 	if err != nil {
 		return err
