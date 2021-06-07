@@ -56,7 +56,17 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 
 	for i := 0; i < m.tries; i++ {
 		if i != 0 {
-			time.Sleep(m.delayFunc(i))
+			select {
+			case <-ctx.Done():
+				// Exit early if the context is done.
+				if ctx.Err() != nil {
+					return ErrFailed
+				}
+				// From the context docs, "Done may return nil if this context can never be canceled."
+				// So we also fall-through here, since we may have an un-cancelable context.
+			case <-time.After(m.delayFunc(i)):
+				// Fall-through when the delay timer completes.
+			}
 		}
 
 		start := time.Now()
