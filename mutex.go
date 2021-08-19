@@ -42,6 +42,11 @@ func (m *Mutex) Value() string {
 	return m.value
 }
 
+// Until returns the time of validity of acquired lock. The value will be zero value until a lock is acquired.
+func (m *Mutex) Until() time.Time{
+	return m.until
+}
+
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) Lock() error {
 	return m.LockContext(nil)
@@ -106,13 +111,20 @@ func (m *Mutex) Extend() (bool, error) {
 
 // Extend resets the mutex's expiry and returns the status of expiry extension.
 func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
+	start := time.Now()
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 		return m.touch(ctx, pool, m.value, int(m.expiry/time.Millisecond))
 	})
 	if n < m.quorum {
 		return false, err
 	}
-	return true, nil
+	now := time.Now()
+	until := now.Add(m.expiry - now.Sub(start) - time.Duration(int64(float64(m.expiry)*m.factor)))
+	if now.Before(until) {
+		m.until = until
+		return true, nil
+	}
+	return false, ErrExtendFailed
 }
 
 func (m *Mutex) Valid() (bool, error) {
