@@ -24,6 +24,7 @@ func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
 	return &conn{p.delegate.Get()}, nil
 }
 
+// NewPool returns a Redigo-based pool implementation.
 func NewPool(delegate *redis.Pool) redsyncredis.Pool {
 	return &pool{delegate}
 }
@@ -66,11 +67,10 @@ func (c *conn) Close() error {
 }
 
 func noErrNil(err error) error {
-	if err == redis.ErrNil {
-		return nil
-	} else {
+	if err != redis.ErrNil {
 		return err
 	}
+	return nil
 }
 
 func args(script *redsyncredis.Script, spec string, keysAndArgs []interface{}) []interface{} {

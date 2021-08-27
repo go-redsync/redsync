@@ -47,7 +47,7 @@ func (m *Mutex) Lock() error {
 	return m.LockContext(nil)
 }
 
-// Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
+// LockContext locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) LockContext(ctx context.Context) error {
 	value, err := m.genValueFunc()
 	if err != nil {
@@ -88,7 +88,7 @@ func (m *Mutex) Unlock() (bool, error) {
 	return m.UnlockContext(nil)
 }
 
-// Unlock unlocks m and returns the status of unlock.
+// UnlockContext unlocks m and returns the status of unlock.
 func (m *Mutex) UnlockContext(ctx context.Context) (bool, error) {
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 		return m.release(ctx, pool, m.value)
@@ -104,7 +104,7 @@ func (m *Mutex) Extend() (bool, error) {
 	return m.ExtendContext(nil)
 }
 
-// Extend resets the mutex's expiry and returns the status of expiry extension.
+// ExtendContext resets the mutex's expiry and returns the status of expiry extension.
 func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 		return m.touch(ctx, pool, m.value, int(m.expiry/time.Millisecond))
@@ -115,10 +115,12 @@ func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+// Valid returns true if the lock acquired through m is still valid.
 func (m *Mutex) Valid() (bool, error) {
 	return m.ValidContext(nil)
 }
 
+// ValidContext returns true if the lock acquired through m is still valid.
 func (m *Mutex) ValidContext(ctx context.Context) (bool, error) {
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 		return m.valid(ctx, pool)

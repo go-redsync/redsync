@@ -20,6 +20,7 @@ func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
 	return &conn{p.delegate, ctx}, nil
 }
 
+// NewPool returns a Goredis-based pool implementation.
 func NewPool(delegate redis.UniversalClient) redsyncredis.Pool {
 	return &pool{delegate}
 }

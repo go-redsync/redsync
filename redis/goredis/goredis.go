@@ -21,6 +21,7 @@ func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
 	return &conn{c}, nil
 }
 
+// NewPool returns a Goredis-based pool implementation.
 func NewPool(delegate *redis.Client) redsyncredis.Pool {
 	return &pool{delegate}
 }
@@ -74,9 +75,8 @@ func (c *conn) Close() error {
 }
 
 func noErrNil(err error) error {
-	if err == redis.Nil {
-		return nil
-	} else {
+	if err != redis.Nil {
 		return err
 	}
+	return nil
 }
