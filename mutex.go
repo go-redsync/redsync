@@ -43,7 +43,7 @@ func (m *Mutex) Value() string {
 }
 
 // Until returns the time of validity of acquired lock. The value will be zero value until a lock is acquired.
-func (m *Mutex) Until() time.Time{
+func (m *Mutex) Until() time.Time {
 	return m.until
 }
 
@@ -127,12 +127,20 @@ func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
 	return false, ErrExtendFailed
 }
 
-// Valid returns true if the lock acquired through m is still valid.
+// Valid returns true if the lock acquired through m is still valid. It may
+// also return true erroneously if qourum is achieved during the call and at
+// least one node then takes long enough to respond for the lock to expire.
+//
+// Deprecated: Use Until instead. See https://github.com/go-redsync/redsync/issues/72.
 func (m *Mutex) Valid() (bool, error) {
 	return m.ValidContext(nil)
 }
 
-// ValidContext returns true if the lock acquired through m is still valid.
+// ValidContext returns true if the lock acquired through m is still valid. It may
+// also return true erroneously if qourum is achieved during the call and at
+// least one node then takes long enough to respond for the lock to expire.
+//
+// Deprecated: Use Until instead. See https://github.com/go-redsync/redsync/issues/72.
 func (m *Mutex) ValidContext(ctx context.Context) (bool, error) {
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 		return m.valid(ctx, pool)
