@@ -80,9 +80,12 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 			m.until = until
 			return nil
 		}
-		_, _ = m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
+		_, err = m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 			return m.release(ctx, pool, value)
 		})
+		if i == m.tries-1 && err != nil {
+			return err
+		}
 	}
 
 	return ErrFailed
