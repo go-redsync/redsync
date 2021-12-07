@@ -128,7 +128,7 @@ func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
 }
 
 // Valid returns true if the lock acquired through m is still valid. It may
-// also return true erroneously if qourum is achieved during the call and at
+// also return true erroneously if quorum is achieved during the call and at
 // least one node then takes long enough to respond for the lock to expire.
 //
 // Deprecated: Use Until instead. See https://github.com/go-redsync/redsync/issues/72.
@@ -137,7 +137,7 @@ func (m *Mutex) Valid() (bool, error) {
 }
 
 // ValidContext returns true if the lock acquired through m is still valid. It may
-// also return true erroneously if qourum is achieved during the call and at
+// also return true erroneously if quorum is achieved during the call and at
 // least one node then takes long enough to respond for the lock to expire.
 //
 // Deprecated: Use Until instead. See https://github.com/go-redsync/redsync/issues/72.

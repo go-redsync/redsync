@@ -101,7 +101,8 @@ func WithGenValueFunc(genValueFunc func() (string, error)) Option {
 	})
 }
 
-// WithValue can be used to assign the random value without having to call lock. This allows the ownership of a lock to be "transfered" and allows the lock to be unlocked from elsewhere.
+// WithValue can be used to assign the random value without having to call lock.
+// This allows the ownership of a lock to be "transferred" and allows the lock to be unlocked from elsewhere.
 func WithValue(v string) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.value = v
