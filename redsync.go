@@ -33,10 +33,11 @@ func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 		delayFunc: func(tries int) time.Duration {
 			return time.Duration(rand.Intn(maxRetryDelayMilliSec-minRetryDelayMilliSec)+minRetryDelayMilliSec) * time.Millisecond
 		},
-		genValueFunc: genValue,
-		factor:       0.01,
-		quorum:       len(r.pools)/2 + 1,
-		pools:        r.pools,
+		genValueFunc:  genValue,
+		driftFactor:   0.01,
+		timeoutFactor: 0.05,
+		quorum:        len(r.pools)/2 + 1,
+		pools:         r.pools,
 	}
 	for _, o := range options {
 		o.Apply(m)
@@ -90,7 +91,14 @@ func WithRetryDelayFunc(delayFunc DelayFunc) Option {
 // WithDriftFactor can be used to set the clock drift factor.
 func WithDriftFactor(factor float64) Option {
 	return OptionFunc(func(m *Mutex) {
-		m.factor = factor
+		m.driftFactor = factor
+	})
+}
+
+// WithTimeoutFactor can be used to set the timeout factor.
+func WithTimeoutFactor(factor float64) Option {
+	return OptionFunc(func(m *Mutex) {
+		m.timeoutFactor = factor
 	})
 }
 
