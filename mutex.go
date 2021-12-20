@@ -21,7 +21,8 @@ type Mutex struct {
 	tries     int
 	delayFunc DelayFunc
 
-	factor float64
+	driftFactor   float64
+	timeoutFactor float64
 
 	quorum int
 
@@ -76,23 +77,31 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 
 		start := time.Now()
 
-		n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
-			return m.acquire(ctx, pool, value)
-		})
+		n, err := func() (int, error) {
+			ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(float64(m.expiry)*m.timeoutFactor)))
+			defer cancel()
+			return m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
+				return m.acquire(ctx, pool, value)
+			})
+		}()
 		if n == 0 && err != nil {
 			return err
 		}
 
 		now := time.Now()
-		until := now.Add(m.expiry - now.Sub(start) - time.Duration(int64(float64(m.expiry)*m.factor)))
+		until := now.Add(m.expiry - now.Sub(start) - time.Duration(int64(float64(m.expiry)*m.driftFactor)))
 		if n >= m.quorum && now.Before(until) {
 			m.value = value
 			m.until = until
 			return nil
 		}
-		_, err = m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
-			return m.release(ctx, pool, value)
-		})
+		_, err = func() (int, error) {
+			ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(float64(m.expiry)*m.timeoutFactor)))
+			defer cancel()
+			return m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
+				return m.release(ctx, pool, value)
+			})
+		}()
 		if i == m.tries-1 && err != nil {
 			return err
 		}
@@ -132,7 +141,7 @@ func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	now := time.Now()
-	until := now.Add(m.expiry - now.Sub(start) - time.Duration(int64(float64(m.expiry)*m.factor)))
+	until := now.Add(m.expiry - now.Sub(start) - time.Duration(int64(float64(m.expiry)*m.driftFactor)))
 	if now.Before(until) {
 		m.until = until
 		return true, nil

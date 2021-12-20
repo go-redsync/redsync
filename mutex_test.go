@@ -258,14 +258,15 @@ func newTestMutexes(pools []redis.Pool, name string, n int) []*Mutex {
 	mutexes := make([]*Mutex, n)
 	for i := 0; i < n; i++ {
 		mutexes[i] = &Mutex{
-			name:         name,
-			expiry:       8 * time.Second,
-			tries:        32,
-			delayFunc:    func(tries int) time.Duration { return 500 * time.Millisecond },
-			genValueFunc: genValue,
-			factor:       0.01,
-			quorum:       len(pools)/2 + 1,
-			pools:        pools,
+			name:          name,
+			expiry:        8 * time.Second,
+			tries:         32,
+			delayFunc:     func(tries int) time.Duration { return 500 * time.Millisecond },
+			genValueFunc:  genValue,
+			driftFactor:   0.01,
+			timeoutFactor: 0.05,
+			quorum:        len(pools)/2 + 1,
+			pools:         pools,
 		}
 	}
 	return mutexes
