@@ -15,7 +15,7 @@ type pool struct {
 
 func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
 	if ctx == nil {
-		ctx = p.delegate.Context()
+		ctx = context.Background()
 	}
 	return &conn{p.delegate, ctx}, nil
 }
@@ -69,13 +69,6 @@ func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (in
 func (c *conn) Close() error {
 	// Not needed for this library
 	return nil
-}
-
-func (c *conn) _context(ctx context.Context) context.Context {
-	if ctx != nil {
-		return ctx
-	}
-	return c.delegate.Context()
 }
 
 func noErrNil(err error) error {
