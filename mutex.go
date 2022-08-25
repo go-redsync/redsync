@@ -69,7 +69,7 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 				// Exit early if the context is done.
-				return ErrFailed
+				return ErrCtxDone
 			case <-time.After(m.delayFunc(i)):
 				// Fall-through when the delay timer completes.
 			}
