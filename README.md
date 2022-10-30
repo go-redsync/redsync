@@ -79,10 +79,11 @@ Redsync is available under the [BSD (3-Clause) License](https://opensource.org/l
 
 This code implements an algorithm which is currently a proposal, it was not formally analyzed. Make sure to understand how it works before using it in production environments.
 
-## Other Projects Using Redsync
+## Real World Uses
 
 Below is a list of public, open source projects that use Redsync:
 
 - [Sourcegraph](https://github.com/sourcegraph/sourcegraph): Universal code search and intelligence platform. Uses Redsync in an internal cache implementation.
+- [Open Match](https://github.com/googleforgames/open-match) by Google: Flexible, extensible, and scalable video game matchmaking. Uses Redsync with its state store implementation.
 
 If you are using Redsync in a project please send a pull request to add it to the list.
