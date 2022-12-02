@@ -95,7 +95,7 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 			m.until = until
 			return nil
 		}
-		_, err = func() (int, error) {
+		func() (int, error) {
 			ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(float64(m.expiry)*m.timeoutFactor)))
 			defer cancel()
 			return m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
@@ -252,27 +252,36 @@ func (m *Mutex) touch(ctx context.Context, pool redis.Pool, value string, expiry
 
 func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, error) {
 	type result struct {
+		Node   int
 		Status bool
 		Err    error
 	}
 
 	ch := make(chan result)
-	for _, pool := range m.pools {
-		go func(pool redis.Pool) {
-			r := result{}
+	for node, pool := range m.pools {
+		go func(node int, pool redis.Pool) {
+			r := result{Node: node}
 			r.Status, r.Err = actFn(pool)
 			ch <- r
-		}(pool)
+		}(node, pool)
 	}
 	n := 0
+	var taken []int
 	var err error
 	for range m.pools {
 		r := <-ch
 		if r.Status {
 			n++
 		} else if r.Err != nil {
-			err = multierror.Append(err, r.Err)
+			err = multierror.Append(err, RedisError{Node: r.Node, Err: r.Err})
+		} else {
+			taken = append(taken, r.Node)
+			err = multierror.Append(err, ErrNodeTaken{Node: r.Node})
 		}
+	}
+
+	if len(taken) >= m.quorum {
+		return n, ErrTaken{Nodes: taken}
 	}
 	return n, err
 }
