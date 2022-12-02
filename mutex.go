@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"time"
 
 	"github.com/go-redsync/redsync/v4/redis"
@@ -84,7 +85,8 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 				return m.acquire(ctx, pool, value)
 			})
 		}()
-		if n == 0 && err != nil {
+		// Don't return error if the lock is already taken
+		if n == 0 && err != nil && !errors.As(err, &ErrTaken{}) {
 			return err
 		}
 
