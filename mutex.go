@@ -270,15 +270,15 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 		if r.Status {
 			n++
 		} else if r.Err != nil {
-			err = multierror.Append(err, RedisError{Node: r.Node, Err: r.Err})
+			err = multierror.Append(err, &RedisError{Node: r.Node, Err: r.Err})
 		} else {
 			taken = append(taken, r.Node)
-			err = multierror.Append(err, ErrNodeTaken{Node: r.Node})
+			err = multierror.Append(err, &ErrNodeTaken{Node: r.Node})
 		}
 	}
 
 	if len(taken) >= m.quorum {
-		return n, ErrTaken{Nodes: taken}
+		return n, &ErrTaken{Nodes: taken}
 	}
 	return n, err
 }

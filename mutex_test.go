@@ -49,7 +49,8 @@ func TestMutexAlreadyLocked(t *testing.T) {
 
 			mutex2 := rs.NewMutex(key)
 			err = mutex2.Lock()
-			if !errors.As(err, &ErrTaken{}) {
+			var errTaken *ErrTaken
+			if !errors.As(err, &errTaken) {
 				t.Fatalf("mutex was not already locked: %s", err)
 			}
 		})
