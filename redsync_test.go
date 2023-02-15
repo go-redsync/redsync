@@ -2,6 +2,7 @@ package redsync
 
 import (
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -14,8 +15,11 @@ import (
 	goredis_v8 "github.com/go-redsync/redsync/v4/redis/goredis/v8"
 	goredis_v9 "github.com/go-redsync/redsync/v4/redis/goredis/v9"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
+	rueidis "github.com/go-redsync/redsync/v4/redis/rueidis"
 	redigolib "github.com/gomodule/redigo/redis"
 	goredislib_v9 "github.com/redis/go-redis/v9"
+	rueidislib "github.com/rueian/rueidis"
+	"github.com/rueian/rueidis/rueidiscompat"
 	"github.com/stvp/tempredis"
 )
 
@@ -48,21 +52,30 @@ func makeCases(poolCount int) map[string]*testCase {
 			poolCount,
 			newMockPoolsGoredisV9(poolCount),
 		},
+		"rueidis": {
+			poolCount,
+			newMockPoolsRueidis(poolCount),
+		},
 	}
 }
 
 // Maintain separate blocks of servers for each type of driver
-const ServerPools = 5
-const ServerPoolSize = 8
-const RedigoBlock = 0
-const GoredisBlock = 1
-const GoredisV7Block = 2
-const GoredisV8Block = 3
-const GoredisV9Block = 4
+const (
+	ServerPools    = 6
+	ServerPoolSize = 8
+	RedigoBlock    = 0
+	GoredisBlock   = 1
+	GoredisV7Block = 2
+	GoredisV8Block = 3
+	GoredisV9Block = 4
+	RueidisBlock   = 5
+)
 
 func TestMain(m *testing.M) {
 	for i := 0; i < ServerPoolSize*ServerPools; i++ {
-		server, err := tempredis.Start(tempredis.Config{})
+		server, err := tempredis.Start(tempredis.Config{
+			"port": strconv.Itoa(51200 + i),
+		})
 		if err != nil {
 			panic(err)
 		}
@@ -166,6 +179,23 @@ func newMockPoolsGoredisV9(n int) []redis.Pool {
 			Addr:    servers[i+offset].Socket(),
 		})
 		pools[i] = goredis_v9.NewPool(client)
+	}
+	return pools
+}
+
+func newMockPoolsRueidis(n int) []redis.Pool {
+	pools := make([]redis.Pool, n)
+
+	offset := RueidisBlock * ServerPoolSize
+
+	for i := 0; i < n; i++ {
+		client, err := rueidislib.NewClient(rueidislib.ClientOption{
+			InitAddress: []string{"127.0.0.1:" + strconv.Itoa(51200+i+offset)},
+		})
+		if err != nil {
+			panic(err)
+		}
+		pools[i] = rueidis.NewPool(rueidiscompat.NewAdapter(client))
 	}
 	return pools
 }
