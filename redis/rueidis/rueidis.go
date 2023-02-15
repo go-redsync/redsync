@@ -22,7 +22,7 @@ func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
 	return &conn{p.delegate, ctx}, nil
 }
 
-// NewPool returns a Goredis-based pool implementation.
+// NewPool returns a rueidis-based pool implementation.
 func NewPool(delegate rueidiscompat.Cmdable) redsyncredis.Pool {
 	return &pool{delegate}
 }
