@@ -2,6 +2,7 @@ package redsync
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/go-redsync/redsync/v4/redis"
@@ -43,6 +44,18 @@ func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 		o.Apply(m)
 	}
 	return m
+}
+
+func (r *Redsync) NewMixinMutex(name string, options ...Option) *MixinMutex {
+	val, _ := locksMap.LoadOrStore(name, &sync.Mutex{})
+	return &MixinMutex{
+		crossProcess: r.NewMutex(name, options...),
+		inProcess:    val.(*sync.Mutex),
+	}
+}
+
+func (r *Redsync) ClearMixinMutex(name string) {
+	locksMap.Delete(name)
 }
 
 // An Option configures a mutex.
