@@ -9,6 +9,7 @@ require (
 	github.com/gomodule/redigo v1.8.2
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
+	github.com/mediocregopher/radix/v4 v4.1.2
 	github.com/redis/go-redis/v9 v9.0.2
 	github.com/rueian/rueidis v0.0.93
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
