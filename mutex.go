@@ -64,13 +64,21 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 		return err
 	}
 
+	var timer *time.Timer
 	for i := 0; i < m.tries; i++ {
 		if i != 0 {
+			if timer == nil {
+				timer = time.NewTimer(m.delayFunc(i))
+			} else {
+				timer.Reset(m.delayFunc(i))
+			}
+
 			select {
 			case <-ctx.Done():
+				timer.Stop()
 				// Exit early if the context is done.
 				return ErrFailed
-			case <-time.After(m.delayFunc(i)):
+			case <-timer.C:
 				// Fall-through when the delay timer completes.
 			}
 		}
