@@ -50,7 +50,7 @@ func (m *Mutex) Until() time.Time {
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) Lock() error {
-	return m.LockContext(nil)
+	return m.LockContext(context.Background())
 }
 
 // LockContext locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
@@ -64,13 +64,21 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 		return err
 	}
 
+	var timer *time.Timer
 	for i := 0; i < m.tries; i++ {
 		if i != 0 {
+			if timer == nil {
+				timer = time.NewTimer(m.delayFunc(i))
+			} else {
+				timer.Reset(m.delayFunc(i))
+			}
+
 			select {
 			case <-ctx.Done():
+				timer.Stop()
 				// Exit early if the context is done.
 				return ErrFailed
-			case <-time.After(m.delayFunc(i)):
+			case <-timer.C:
 				// Fall-through when the delay timer completes.
 			}
 		}
@@ -109,7 +117,7 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 
 // Unlock unlocks m and returns the status of unlock.
 func (m *Mutex) Unlock() (bool, error) {
-	return m.UnlockContext(nil)
+	return m.UnlockContext(context.Background())
 }
 
 // UnlockContext unlocks m and returns the status of unlock.
@@ -125,7 +133,7 @@ func (m *Mutex) UnlockContext(ctx context.Context) (bool, error) {
 
 // Extend resets the mutex's expiry and returns the status of expiry extension.
 func (m *Mutex) Extend() (bool, error) {
-	return m.ExtendContext(nil)
+	return m.ExtendContext(context.Background())
 }
 
 // ExtendContext resets the mutex's expiry and returns the status of expiry extension.
@@ -152,7 +160,7 @@ func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
 //
 // Deprecated: Use Until instead. See https://github.com/go-redsync/redsync/issues/72.
 func (m *Mutex) Valid() (bool, error) {
-	return m.ValidContext(nil)
+	return m.ValidContext(context.Background())
 }
 
 // ValidContext returns true if the lock acquired through m is still valid. It may

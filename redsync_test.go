@@ -1,6 +1,7 @@
 package redsync
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"testing"
@@ -89,6 +90,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestRedsync(t *testing.T) {
+	ctx := context.Background()
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
 			rs := New(v.pools...)
@@ -96,7 +98,7 @@ func TestRedsync(t *testing.T) {
 			mutex := rs.NewMutex("test-redsync")
 			_ = mutex.Lock()
 
-			assertAcquired(t, v.pools, mutex)
+			assertAcquired(ctx, t, v.pools, mutex)
 		})
 	}
 }

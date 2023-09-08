@@ -71,13 +71,6 @@ func (c *conn) Close() error {
 	return nil
 }
 
-func (c *conn) _context(ctx context.Context) context.Context {
-	if ctx != nil {
-		return ctx
-	}
-	return c.delegate.Context()
-}
-
 func noErrNil(err error) error {
 	if err == redis.Nil {
 		return nil
