@@ -16,7 +16,7 @@ func TestMutex(t *testing.T) {
 	ctx := context.Background()
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
-			mutexes := newTestMutexes(v.pools, "test-mutex", v.poolCount)
+			mutexes := newTestMutexes(v.pools, k+"-test-mutex", v.poolCount)
 			eg := errgroup.Group{}
 			for i, mutex := range mutexes {
 				func(i int, mutex *Mutex) {
@@ -69,7 +69,7 @@ func TestMutexAlreadyLocked(t *testing.T) {
 func TestMutexExtend(t *testing.T) {
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
-			mutexes := newTestMutexes(v.pools, "test-mutex-extend", 1)
+			mutexes := newTestMutexes(v.pools, k+"-test-mutex-extend", 1)
 			mutex := mutexes[0]
 
 			err := mutex.Lock()
@@ -102,7 +102,7 @@ func TestMutexExtend(t *testing.T) {
 func TestMutexExtendExpired(t *testing.T) {
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
-			mutexes := newTestMutexes(v.pools, "test-mutex-extend", 1)
+			mutexes := newTestMutexes(v.pools, k+"-test-mutex-extend", 1)
 			mutex := mutexes[0]
 			mutex.expiry = 500 * time.Millisecond
 
@@ -128,7 +128,7 @@ func TestMutexExtendExpired(t *testing.T) {
 func TestMutexUnlockExpired(t *testing.T) {
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
-			mutexes := newTestMutexes(v.pools, "test-mutex-extend", 1)
+			mutexes := newTestMutexes(v.pools, k+"-test-mutex-extend", 1)
 			mutex := mutexes[0]
 			mutex.expiry = 500 * time.Millisecond
 
@@ -156,7 +156,7 @@ func TestMutexQuorum(t *testing.T) {
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
 			for mask := 0; mask < 1<<uint(len(v.pools)); mask++ {
-				mutexes := newTestMutexes(v.pools, "test-mutex-partial-"+strconv.Itoa(mask), 1)
+				mutexes := newTestMutexes(v.pools, k+"-test-mutex-partial-"+strconv.Itoa(mask), 1)
 				mutex := mutexes[0]
 				mutex.tries = 1
 
@@ -184,7 +184,7 @@ func TestValid(t *testing.T) {
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
 			rs := New(v.pools...)
-			key := "test-shared-lock"
+			key := k + "-test-shared-lock"
 
 			mutex1 := rs.NewMutex(key, WithExpiry(time.Hour))
 			err := mutex1.Lock()
