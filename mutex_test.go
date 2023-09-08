@@ -1,40 +1,49 @@
 package redsync
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/go-redsync/redsync/v4/redis"
+	"golang.org/x/sync/errgroup"
 )
 
 func TestMutex(t *testing.T) {
+	ctx := context.Background()
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
 			mutexes := newTestMutexes(v.pools, "test-mutex", v.poolCount)
-			orderCh := make(chan int)
+			eg := errgroup.Group{}
 			for i, mutex := range mutexes {
-				go func(i int, mutex *Mutex) {
-					err := mutex.Lock()
-					if err != nil {
-						t.Fatalf("mutex lock failed: %s", err)
-					}
-					defer mutex.Unlock()
+				func(i int, mutex *Mutex) {
+					eg.Go(func() error {
+						err := mutex.Lock()
+						if err != nil {
+							return err
+						}
+						defer mutex.Unlock()
 
-					assertAcquired(t, v.pools, mutex)
-
-					orderCh <- i
+						if !isAcquired(ctx, v.pools, mutex) {
+							return fmt.Errorf("Expected n >= %d, got %d", mutex.quorum, countAcquiredPools(ctx, v.pools, mutex))
+						}
+						return nil
+					})
 				}(i, mutex)
 			}
-			for range mutexes {
-				<-orderCh
+			err := eg.Wait()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
 			}
 		})
 	}
 }
 
 func TestMutexAlreadyLocked(t *testing.T) {
+	ctx := context.Background()
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
 			rs := New(v.pools...)
@@ -45,7 +54,7 @@ func TestMutexAlreadyLocked(t *testing.T) {
 			if err != nil {
 				t.Fatalf("mutex lock failed: %s", err)
 			}
-			assertAcquired(t, v.pools, mutex1)
+			assertAcquired(ctx, t, v.pools, mutex1)
 
 			mutex2 := rs.NewMutex(key)
 			err = mutex2.Lock()
@@ -143,6 +152,7 @@ func TestMutexUnlockExpired(t *testing.T) {
 }
 
 func TestMutexQuorum(t *testing.T) {
+	ctx := context.Background()
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
 			for mask := 0; mask < 1<<uint(len(v.pools)); mask++ {
@@ -157,7 +167,7 @@ func TestMutexQuorum(t *testing.T) {
 					if err != nil {
 						t.Fatalf("mutex lock failed: %s", err)
 					}
-					assertAcquired(t, v.pools, mutex)
+					assertAcquired(ctx, t, v.pools, mutex)
 				} else {
 					err := mutex.Lock()
 					if errors.Is(err, &ErrNodeTaken{}) {
@@ -170,6 +180,7 @@ func TestMutexQuorum(t *testing.T) {
 }
 
 func TestValid(t *testing.T) {
+	ctx := context.Background()
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
 			rs := New(v.pools...)
@@ -180,7 +191,7 @@ func TestValid(t *testing.T) {
 			if err != nil {
 				t.Fatalf("mutex lock failed: %s", err)
 			}
-			assertAcquired(t, v.pools, mutex1)
+			assertAcquired(ctx, t, v.pools, mutex1)
 
 			ok, err := mutex1.Valid()
 			if err != nil {
@@ -200,6 +211,7 @@ func TestValid(t *testing.T) {
 }
 
 func TestMutexLockUnlockSplit(t *testing.T) {
+	ctx := context.Background()
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
 			rs := New(v.pools...)
@@ -210,7 +222,7 @@ func TestMutexLockUnlockSplit(t *testing.T) {
 			if err != nil {
 				t.Fatalf("mutex lock failed: %s", err)
 			}
-			assertAcquired(t, v.pools, mutex1)
+			assertAcquired(ctx, t, v.pools, mutex1)
 
 			mutex2 := rs.NewMutex(key, WithExpiry(time.Hour), WithValue(mutex1.Value()))
 			ok, err := mutex2.Unlock()
@@ -224,10 +236,10 @@ func TestMutexLockUnlockSplit(t *testing.T) {
 	}
 }
 
-func getPoolValues(pools []redis.Pool, name string) []string {
+func getPoolValues(ctx context.Context, pools []redis.Pool, name string) []string {
 	values := make([]string, len(pools))
 	for i, pool := range pools {
-		conn, err := pool.Get(nil)
+		conn, err := pool.Get(ctx)
 		if err != nil {
 			panic(err)
 		}
@@ -244,7 +256,7 @@ func getPoolValues(pools []redis.Pool, name string) []string {
 func getPoolExpiries(pools []redis.Pool, name string) []int {
 	expiries := make([]int, len(pools))
 	for i, pool := range pools {
-		conn, err := pool.Get(nil)
+		conn, err := pool.Get(context.TODO())
 		if err != nil {
 			panic(err)
 		}
@@ -265,7 +277,7 @@ func clogPools(pools []redis.Pool, mask int, mutex *Mutex) int {
 			n++
 			continue
 		}
-		conn, err := pool.Get(nil)
+		conn, err := pool.Get(context.Background())
 		if err != nil {
 			panic(err)
 		}
@@ -296,15 +308,31 @@ func newTestMutexes(pools []redis.Pool, name string, n int) []*Mutex {
 	return mutexes
 }
 
-func assertAcquired(t *testing.T, pools []redis.Pool, mutex *Mutex) {
+func isAcquired(ctx context.Context, pools []redis.Pool, mutex *Mutex) bool {
+	n := countAcquiredPools(ctx, pools, mutex)
+	return n >= mutex.quorum
+}
+
+func countAcquiredPools(ctx context.Context, pools []redis.Pool, mutex *Mutex) int {
 	n := 0
-	values := getPoolValues(pools, mutex.name)
+	values := getPoolValues(ctx, pools, mutex.name)
 	for _, value := range values {
 		if value == mutex.value {
 			n++
 		}
 	}
-	if n < mutex.quorum {
+	return n
+}
+
+func assertAcquired(ctx context.Context, t *testing.T, pools []redis.Pool, mutex *Mutex) {
+	n := 0
+	values := getPoolValues(ctx, pools, mutex.name)
+	for _, value := range values {
+		if value == mutex.value {
+			n++
+		}
+	}
+	if !isAcquired(ctx, pools, mutex) {
 		t.Fatalf("Expected n >= %d, got %d", mutex.quorum, n)
 	}
 }
