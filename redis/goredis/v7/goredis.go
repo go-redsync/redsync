@@ -10,13 +10,18 @@ import (
 )
 
 type pool struct {
-	delegate *redis.Client
+	delegate redis.UniversalClient
 }
 
 func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
 	c := p.delegate
 	if ctx != nil {
-		c = c.WithContext(ctx)
+		switch client := p.delegate.(type) {
+		case *redis.Client:
+			c = client.WithContext(ctx)
+		case *redis.ClusterClient:
+			c = client.WithContext(ctx)
+		}
 	}
 	return &conn{c}, nil
 }
@@ -27,7 +32,7 @@ func NewPool(delegate *redis.Client) redsyncredis.Pool {
 }
 
 type conn struct {
-	delegate *redis.Client
+	delegate redis.UniversalClient
 }
 
 func (c *conn) Get(name string) (string, error) {
@@ -69,13 +74,6 @@ func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (in
 func (c *conn) Close() error {
 	// Not needed for this library
 	return nil
-}
-
-func (c *conn) client(ctx context.Context) *redis.Client {
-	if ctx != nil {
-		return c.delegate.WithContext(ctx)
-	}
-	return c.delegate
 }
 
 func noErrNil(err error) error {
