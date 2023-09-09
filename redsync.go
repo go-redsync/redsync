@@ -100,7 +100,7 @@ func WithDriftFactor(factor float64) Option {
 }
 
 // WithTimeoutFactor can be used to set the timeout factor.
-// the default value is default: 0.05
+// the default value is 0.05.
 func WithTimeoutFactor(factor float64) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.timeoutFactor = factor
