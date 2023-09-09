@@ -257,16 +257,16 @@ func (m *Mutex) touch(ctx context.Context, pool redis.Pool, value string, expiry
 
 func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, error) {
 	type result struct {
-		Node   int
-		Status bool
-		Err    error
+		node     int
+		statusOK bool
+		err      error
 	}
 
 	ch := make(chan result)
 	for node, pool := range m.pools {
 		go func(node int, pool redis.Pool) {
-			r := result{Node: node}
-			r.Status, r.Err = actFn(pool)
+			r := result{node: node}
+			r.statusOK, r.err = actFn(pool)
 			ch <- r
 		}(node, pool)
 	}
@@ -275,13 +275,13 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 	var err error
 	for range m.pools {
 		r := <-ch
-		if r.Status {
+		if r.statusOK {
 			n++
-		} else if r.Err != nil {
-			err = multierror.Append(err, &RedisError{Node: r.Node, Err: r.Err})
+		} else if r.err != nil {
+			err = multierror.Append(err, &RedisError{Node: r.node, Err: r.err})
 		} else {
-			taken = append(taken, r.Node)
-			err = multierror.Append(err, &ErrNodeTaken{Node: r.Node})
+			taken = append(taken, r.node)
+			err = multierror.Append(err, &ErrNodeTaken{Node: r.node})
 		}
 	}
 
