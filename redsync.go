@@ -43,7 +43,7 @@ func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 		o.Apply(m)
 	}
 	if m.shuffle {
-		m.pools = randomPools(m.pools)
+		randomPools(m.pools)
 	}
 	return m
 }
@@ -129,9 +129,8 @@ func WithShufflePools(b bool) Option {
 }
 
 // randomPools shuffle redis pools.
-func randomPools(pools []redis.Pool) []redis.Pool {
+func randomPools(pools []redis.Pool) {
 	rand.Shuffle(len(pools), func(i, j int) {
 		pools[i], pools[j] = pools[j], pools[i]
 	})
-	return pools
 }
