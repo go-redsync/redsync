@@ -42,6 +42,9 @@ func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 	for _, o := range options {
 		o.Apply(m)
 	}
+	if m.shuffle {
+		m.pools = randomPools(m.pools)
+	}
 	return m
 }
 
@@ -115,4 +118,20 @@ func WithValue(v string) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.value = v
 	})
+}
+
+// WithShufflePools can be used to shuffle redis pools.
+// when the redis pools are shuffled, centralized access to redis is reduced in concurrent scenarios.
+func WithShufflePools(b bool) Option {
+	return OptionFunc(func(m *Mutex) {
+		m.shuffle = b
+	})
+}
+
+// randomPools shuffle redis pools.
+func randomPools(pools []redis.Pool) []redis.Pool {
+	rand.Shuffle(len(pools), func(i, j int) {
+		pools[i], pools[j] = pools[j], pools[i]
+	})
+	return pools
 }
