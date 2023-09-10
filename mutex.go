@@ -29,6 +29,7 @@ type Mutex struct {
 	genValueFunc func() (string, error)
 	value        string
 	until        time.Time
+	shuffle      bool
 
 	pools []redis.Pool
 }
