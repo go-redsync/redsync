@@ -132,7 +132,7 @@ func WithShufflePools(b bool) Option {
 	})
 }
 
-// randomPools shuffle redis pools.
+// randomPools shuffles Redis pools.
 func randomPools(pools []redis.Pool) {
 	rand.Shuffle(len(pools), func(i, j int) {
 		pools[i], pools[j] = pools[j], pools[i]
