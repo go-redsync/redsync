@@ -59,6 +59,7 @@ func (f OptionFunc) Apply(mutex *Mutex) {
 }
 
 // WithExpiry can be used to set the expiry of a mutex to the given value.
+// the default is 8s.
 func WithExpiry(expiry time.Duration) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.expiry = expiry
@@ -66,6 +67,7 @@ func WithExpiry(expiry time.Duration) Option {
 }
 
 // WithTries can be used to set the number of times lock acquire is attempted.
+// the default value is 32.
 func WithTries(tries int) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.tries = tries
@@ -73,6 +75,7 @@ func WithTries(tries int) Option {
 }
 
 // WithRetryDelay can be used to set the amount of time to wait between retries.
+// the default value is rand(50ms, 250ms).
 func WithRetryDelay(delay time.Duration) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.delayFunc = func(tries int) time.Duration {
@@ -89,6 +92,7 @@ func WithRetryDelayFunc(delayFunc DelayFunc) Option {
 }
 
 // WithDriftFactor can be used to set the clock drift factor.
+// the default value is 0.01.
 func WithDriftFactor(factor float64) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.driftFactor = factor
@@ -96,6 +100,7 @@ func WithDriftFactor(factor float64) Option {
 }
 
 // WithTimeoutFactor can be used to set the timeout factor.
+// the default value is 0.05.
 func WithTimeoutFactor(factor float64) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.timeoutFactor = factor
