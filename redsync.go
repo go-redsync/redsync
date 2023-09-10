@@ -125,8 +125,9 @@ func WithValue(v string) Option {
 	})
 }
 
-// With FailFast can be used to quickly acquire and release the locker. We do not need to wait for all redis response results.
-// As long as the quorum is met, it will be returned immediately, and requests that have not yet been returned will be processed asynchronously.
+// WithFailFast can be used to quickly acquire and release the locker when some redis servers are blocking.
+// We do not need to wait for all redis servers response. As long as the quorum is met, it will be returned immediately, and requests that have not yet been returned will be processed asynchronously.
+// The effect of this parameter is to achieve low latency, avoid redis blocking causing lock/unlock to not return for a long time.
 func WithFailFast(b bool) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.failFast = b
