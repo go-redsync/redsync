@@ -125,8 +125,7 @@ func WithValue(v string) Option {
 	})
 }
 
-// WithShufflePools can be used to shuffle redis pools.
-// when the redis pools are shuffled, centralized access to redis is reduced in concurrent scenarios.
+// WithShufflePools can be used to shuffle Redis pools to reduce centralized access in concurrent scenarios.
 func WithShufflePools(b bool) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.shuffle = b
