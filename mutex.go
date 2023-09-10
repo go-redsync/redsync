@@ -30,6 +30,7 @@ type Mutex struct {
 	value        string
 	until        time.Time
 	shuffle      bool
+	failFast     bool
 
 	pools []redis.Pool
 }
@@ -263,7 +264,7 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 		err      error
 	}
 
-	ch := make(chan result)
+	ch := make(chan result, len(m.pools))
 	for node, pool := range m.pools {
 		go func(node int, pool redis.Pool) {
 			r := result{node: node}
@@ -271,9 +272,13 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 			ch <- r
 		}(node, pool)
 	}
-	n := 0
-	var taken []int
-	var err error
+
+	var (
+		n     = 0
+		taken []int
+		err   error
+	)
+
 	for range m.pools {
 		r := <-ch
 		if r.statusOK {
@@ -283,6 +288,18 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 		} else {
 			taken = append(taken, r.node)
 			err = multierror.Append(err, &ErrNodeTaken{Node: r.node})
+		}
+
+		if m.failFast {
+			// fast retrun
+			if n >= m.quorum {
+				return n, err
+			}
+
+			// fail fast
+			if len(taken) >= m.quorum {
+				return n, &ErrTaken{Nodes: taken}
+			}
 		}
 	}
 

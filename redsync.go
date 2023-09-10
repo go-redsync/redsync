@@ -125,6 +125,14 @@ func WithValue(v string) Option {
 	})
 }
 
+// With FailFast can be used to quickly acquire and release the locker. We do not need to wait for all redis response results.
+// As long as the quorum is met, it will be returned immediately, and requests that have not yet been returned will be processed asynchronously.
+func WithFailFast(b bool) Option {
+	return OptionFunc(func(m *Mutex) {
+		m.failFast = b
+	})
+}
+
 // WithShufflePools can be used to shuffle Redis pools to reduce centralized access in concurrent scenarios.
 func WithShufflePools(b bool) Option {
 	return OptionFunc(func(m *Mutex) {
