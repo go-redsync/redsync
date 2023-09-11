@@ -125,17 +125,16 @@ func WithValue(v string) Option {
 	})
 }
 
-// WithClusterMode
-func WithClusterMode(quorum, keyCount int) Option {
+// WithClusterMode can be used to call lock/unlock by redis pool in redis cluster.
+// When using redis cluster, the redis client pool is usually just one.
+// We can set the KeyCount number of keys, the key layout is {name}-{idx}, and request different redis according to the redis slot distribution probability.
+func WithClusterMode(keyCount int) Option {
 	return OptionFunc(func(m *Mutex) {
-		if keyCount < quorum {
-			return
-		}
-		if keyCount <= 0 || quorum <= 0 {
-			return
+		if keyCount <= 0 {
+			keyCount = 6
 		}
 
-		m.quorum = quorum
+		m.quorum = keyCount/2 + 1
 		m.keyCount = keyCount
 		m.clusterMode = true
 	})
