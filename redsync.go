@@ -125,6 +125,22 @@ func WithValue(v string) Option {
 	})
 }
 
+// WithClusterMode
+func WithClusterMode(quorum, keyCount int) Option {
+	return OptionFunc(func(m *Mutex) {
+		if keyCount < quorum {
+			return
+		}
+		if keyCount <= 0 || quorum <= 0 {
+			return
+		}
+
+		m.quorum = quorum
+		m.keyCount = keyCount
+		m.clusterMode = true
+	})
+}
+
 // WithFailFast can be used to quickly acquire and release the lock.
 // When some Redis servers are blocking, we do not need to wait for responses from all the Redis servers response.
 // As long as the quorum is met, we can assume the lock is acquired. The effect of this parameter is to achieve low
