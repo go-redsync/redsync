@@ -10,6 +10,11 @@ import (
 const (
 	minRetryDelayMilliSec = 50
 	maxRetryDelayMilliSec = 250
+
+	defaultExpiry        = 8 * time.Second
+	defaultTries         = 32
+	defaultDriftFactor   = 0.01
+	defaultTimeoutFactor = 0.05
 )
 
 // Redsync provides a simple method for creating distributed mutexes using multiple Redis connection pools.
@@ -28,14 +33,14 @@ func New(pools ...redis.Pool) *Redsync {
 func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 	m := &Mutex{
 		name:   name,
-		expiry: 8 * time.Second,
-		tries:  32,
+		expiry: defaultExpiry,
+		tries:  defaultTries,
 		delayFunc: func(tries int) time.Duration {
 			return time.Duration(rand.Intn(maxRetryDelayMilliSec-minRetryDelayMilliSec)+minRetryDelayMilliSec) * time.Millisecond
 		},
 		genValueFunc:  genValue,
-		driftFactor:   0.01,
-		timeoutFactor: 0.05,
+		driftFactor:   defaultDriftFactor,
+		timeoutFactor: defaultTimeoutFactor,
 		quorum:        len(r.pools)/2 + 1,
 		pools:         r.pools,
 	}
@@ -62,7 +67,7 @@ func (f OptionFunc) Apply(mutex *Mutex) {
 }
 
 // WithExpiry can be used to set the expiry of a mutex to the given value.
-// The default is 8s.
+// The default value is 8s.
 func WithExpiry(expiry time.Duration) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.expiry = expiry
@@ -106,6 +111,10 @@ func WithDriftFactor(factor float64) Option {
 // The default value is 0.05.
 func WithTimeoutFactor(factor float64) Option {
 	return OptionFunc(func(m *Mutex) {
+		if factor > 1 || factor <= 0 {
+			factor = defaultTimeoutFactor
+		}
+
 		m.timeoutFactor = factor
 	})
 }
