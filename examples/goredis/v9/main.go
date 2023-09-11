@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
+	"github.com/n-h-n/redsync/v4"
+	"github.com/n-h-n/redsync/v4/redis/goredis/v9"
 	goredislib "github.com/redis/go-redis/v9"
 	"github.com/stvp/tempredis"
 )

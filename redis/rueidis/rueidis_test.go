@@ -1,6 +1,6 @@
 package rueidis
 
-import "github.com/go-redsync/redsync/v4/redis"
+import "github.com/n-h-n/redsync/v4/redis"
 
 var _ redis.Conn = (*conn)(nil)
 
