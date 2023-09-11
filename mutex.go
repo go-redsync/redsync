@@ -124,7 +124,7 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 			ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(float64(m.expiry)*m.timeoutFactor)))
 			defer cancel()
 			return m.actOnPoolsAsync(func(name string, pool redis.Pool) (bool, error) {
-				return m.release(ctx, name, pool, value)
+				return m.release(ctx, pool, name, value)
 			})
 		}()
 		if i == m.tries-1 && err != nil {
@@ -143,7 +143,7 @@ func (m *Mutex) Unlock() (bool, error) {
 // UnlockContext unlocks m and returns the status of unlock.
 func (m *Mutex) UnlockContext(ctx context.Context) (bool, error) {
 	n, err := m.actOnPoolsAsync(func(name string, pool redis.Pool) (bool, error) {
-		return m.release(ctx, name, pool, m.value)
+		return m.release(ctx, pool, name, m.value)
 	})
 	if n < m.quorum {
 		return false, err
@@ -160,7 +160,7 @@ func (m *Mutex) Extend() (bool, error) {
 func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
 	start := time.Now()
 	n, err := m.actOnPoolsAsync(func(name string, pool redis.Pool) (bool, error) {
-		return m.touch(ctx, name, pool, m.value, int(m.expiry/time.Millisecond))
+		return m.touch(ctx, pool, name, m.value, int(m.expiry/time.Millisecond))
 	})
 	if n < m.quorum {
 		return false, err
@@ -241,7 +241,7 @@ var deleteScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) release(ctx context.Context, name string, pool redis.Pool, value string) (bool, error) {
+func (m *Mutex) release(ctx context.Context, pool redis.Pool, name, value string) (bool, error) {
 	conn, err := pool.Get(ctx)
 	if err != nil {
 		return false, err
@@ -262,7 +262,7 @@ var touchScript = redis.NewScript(1, `
 	end
 `)
 
-func (m *Mutex) touch(ctx context.Context, name string, pool redis.Pool, value string, expiry int) (bool, error) {
+func (m *Mutex) touch(ctx context.Context, pool redis.Pool, name, value string, expiry int) (bool, error) {
 	conn, err := pool.Get(ctx)
 	if err != nil {
 		return false, err
