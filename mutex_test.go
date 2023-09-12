@@ -42,6 +42,46 @@ func TestMutex(t *testing.T) {
 	}
 }
 
+func TestTryLock(t *testing.T) {
+	ctx := context.Background()
+	for k, v := range makeCases(8) {
+		t.Run(k, func(t *testing.T) {
+			mutexes := newTestMutexes(v.pools, k+"-test-trylock", v.poolCount)
+			eg := errgroup.Group{}
+			for i, mutex := range mutexes {
+				func(i int, mutex *Mutex) {
+					eg.Go(func() error {
+						err := mutex.TryLockContext(context.Background())
+						for {
+							if err == nil {
+								break
+							}
+
+							time.Sleep(100 * time.Millisecond) // 1ms
+						}
+
+						ok, err := mutex.Extend()
+						if err != nil || !ok {
+							t.Fatalf("extend failed: %v", err)
+						}
+
+						defer mutex.Unlock()
+
+						if !isAcquired(ctx, v.pools, mutex) {
+							return fmt.Errorf("Expected n >= %d, got %d", mutex.quorum, countAcquiredPools(ctx, v.pools, mutex))
+						}
+						return nil
+					})
+				}(i, mutex)
+			}
+			err := eg.Wait()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
+			}
+		})
+	}
+}
+
 func TestMutexAlreadyLocked(t *testing.T) {
 	ctx := context.Background()
 	for k, v := range makeCases(4) {
