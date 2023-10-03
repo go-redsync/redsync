@@ -28,7 +28,7 @@ var servers []*tempredis.Server
 
 type testCase struct {
 	poolCount int
-	pools     []redis.Pool
+	pools     []*redis.Pool
 }
 
 func makeCases(poolCount int) map[string]*testCase {
@@ -103,14 +103,14 @@ func TestRedsync(t *testing.T) {
 	}
 }
 
-func newMockPoolsRedigo(n int) []redis.Pool {
-	pools := make([]redis.Pool, n)
+func newMockPoolsRedigo(n int) []*redis.Pool {
+	pools := make([]*redis.Pool, n)
 
 	offset := RedigoBlock * ServerPoolSize
 
 	for i := 0; i < n; i++ {
 		server := servers[i+offset]
-		pools[i] = redigo.NewPool(&redigolib.Pool{
+		p := redigo.NewPool(&redigolib.Pool{
 			MaxIdle:     3,
 			IdleTimeout: 240 * time.Second,
 			Dial: func() (redigolib.Conn, error) {
@@ -121,12 +121,13 @@ func newMockPoolsRedigo(n int) []redis.Pool {
 				return err
 			},
 		})
+		pools[i] = &p
 	}
 	return pools
 }
 
-func newMockPoolsGoredis(n int) []redis.Pool {
-	pools := make([]redis.Pool, n)
+func newMockPoolsGoredis(n int) []*redis.Pool {
+	pools := make([]*redis.Pool, n)
 
 	offset := GoredisBlock * ServerPoolSize
 
@@ -135,13 +136,14 @@ func newMockPoolsGoredis(n int) []redis.Pool {
 			Network: "unix",
 			Addr:    servers[i+offset].Socket(),
 		})
-		pools[i] = goredis.NewPool(client)
+		p := goredis.NewPool(client)
+		pools[i] = &p
 	}
 	return pools
 }
 
-func newMockPoolsGoredisV7(n int) []redis.Pool {
-	pools := make([]redis.Pool, n)
+func newMockPoolsGoredisV7(n int) []*redis.Pool {
+	pools := make([]*redis.Pool, n)
 
 	offset := GoredisV7Block * ServerPoolSize
 
@@ -150,13 +152,14 @@ func newMockPoolsGoredisV7(n int) []redis.Pool {
 			Network: "unix",
 			Addr:    servers[i+offset].Socket(),
 		})
-		pools[i] = goredis_v7.NewPool(client)
+		p := goredis_v7.NewPool(client)
+		pools[i] = &p
 	}
 	return pools
 }
 
-func newMockPoolsGoredisV8(n int) []redis.Pool {
-	pools := make([]redis.Pool, n)
+func newMockPoolsGoredisV8(n int) []*redis.Pool {
+	pools := make([]*redis.Pool, n)
 
 	offset := GoredisV8Block * ServerPoolSize
 
@@ -165,13 +168,14 @@ func newMockPoolsGoredisV8(n int) []redis.Pool {
 			Network: "unix",
 			Addr:    servers[i+offset].Socket(),
 		})
-		pools[i] = goredis_v8.NewPool(client)
+		p := goredis_v8.NewPool(client)
+		pools[i] = &p
 	}
 	return pools
 }
 
-func newMockPoolsGoredisV9(n int) []redis.Pool {
-	pools := make([]redis.Pool, n)
+func newMockPoolsGoredisV9(n int) []*redis.Pool {
+	pools := make([]*redis.Pool, n)
 
 	offset := GoredisV9Block * ServerPoolSize
 
@@ -180,13 +184,14 @@ func newMockPoolsGoredisV9(n int) []redis.Pool {
 			Network: "unix",
 			Addr:    servers[i+offset].Socket(),
 		})
-		pools[i] = goredis_v9.NewPool(client)
+		p := goredis_v9.NewPool(client)
+		pools[i] = &p
 	}
 	return pools
 }
 
-func newMockPoolsRueidis(n int) []redis.Pool {
-	pools := make([]redis.Pool, n)
+func newMockPoolsRueidis(n int) []*redis.Pool {
+	pools := make([]*redis.Pool, n)
 
 	offset := RueidisBlock * ServerPoolSize
 
@@ -197,7 +202,8 @@ func newMockPoolsRueidis(n int) []redis.Pool {
 		if err != nil {
 			panic(err)
 		}
-		pools[i] = rueidis.NewPool(rueidiscompat.NewAdapter(client))
+		p := rueidis.NewPool(rueidiscompat.NewAdapter(client))
+		pools[i] = &p
 	}
 	return pools
 }

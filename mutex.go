@@ -32,7 +32,7 @@ type Mutex struct {
 	shuffle      bool
 	failFast     bool
 
-	pools []redis.Pool
+	pools []*redis.Pool
 }
 
 // Name returns mutex name (i.e. the Redis key).
@@ -270,7 +270,7 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 			r := result{node: node}
 			r.statusOK, r.err = actFn(pool)
 			ch <- r
-		}(node, pool)
+		}(node, *pool)
 	}
 
 	var (

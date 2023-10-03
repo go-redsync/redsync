@@ -21,7 +21,7 @@ func main() {
 
 	pool := goredis.NewPool(client)
 
-	rs := redsync.New(pool)
+	rs := redsync.New(&pool)
 
 	mutex := rs.NewMutex("test-redsync")
 

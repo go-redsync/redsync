@@ -236,10 +236,10 @@ func TestMutexLockUnlockSplit(t *testing.T) {
 	}
 }
 
-func getPoolValues(ctx context.Context, pools []redis.Pool, name string) []string {
+func getPoolValues(ctx context.Context, pools []*redis.Pool, name string) []string {
 	values := make([]string, len(pools))
 	for i, pool := range pools {
-		conn, err := pool.Get(ctx)
+		conn, err := (*pool).Get(ctx)
 		if err != nil {
 			panic(err)
 		}
@@ -253,10 +253,10 @@ func getPoolValues(ctx context.Context, pools []redis.Pool, name string) []strin
 	return values
 }
 
-func getPoolExpiries(pools []redis.Pool, name string) []int {
+func getPoolExpiries(pools []*redis.Pool, name string) []int {
 	expiries := make([]int, len(pools))
 	for i, pool := range pools {
-		conn, err := pool.Get(context.TODO())
+		conn, err := (*pool).Get(context.TODO())
 		if err != nil {
 			panic(err)
 		}
@@ -270,14 +270,14 @@ func getPoolExpiries(pools []redis.Pool, name string) []int {
 	return expiries
 }
 
-func clogPools(pools []redis.Pool, mask int, mutex *Mutex) int {
+func clogPools(pools []*redis.Pool, mask int, mutex *Mutex) int {
 	n := 0
 	for i, pool := range pools {
 		if mask&(1<<uint(i)) == 0 {
 			n++
 			continue
 		}
-		conn, err := pool.Get(context.Background())
+		conn, err := (*pool).Get(context.Background())
 		if err != nil {
 			panic(err)
 		}
@@ -290,7 +290,7 @@ func clogPools(pools []redis.Pool, mask int, mutex *Mutex) int {
 	return n
 }
 
-func newTestMutexes(pools []redis.Pool, name string, n int) []*Mutex {
+func newTestMutexes(pools []*redis.Pool, name string, n int) []*Mutex {
 	mutexes := make([]*Mutex, n)
 	for i := 0; i < n; i++ {
 		mutexes[i] = &Mutex{
@@ -308,12 +308,12 @@ func newTestMutexes(pools []redis.Pool, name string, n int) []*Mutex {
 	return mutexes
 }
 
-func isAcquired(ctx context.Context, pools []redis.Pool, mutex *Mutex) bool {
+func isAcquired(ctx context.Context, pools []*redis.Pool, mutex *Mutex) bool {
 	n := countAcquiredPools(ctx, pools, mutex)
 	return n >= mutex.quorum
 }
 
-func countAcquiredPools(ctx context.Context, pools []redis.Pool, mutex *Mutex) int {
+func countAcquiredPools(ctx context.Context, pools []*redis.Pool, mutex *Mutex) int {
 	n := 0
 	values := getPoolValues(ctx, pools, mutex.name)
 	for _, value := range values {
@@ -324,7 +324,7 @@ func countAcquiredPools(ctx context.Context, pools []redis.Pool, mutex *Mutex) i
 	return n
 }
 
-func assertAcquired(ctx context.Context, t *testing.T, pools []redis.Pool, mutex *Mutex) {
+func assertAcquired(ctx context.Context, t *testing.T, pools []*redis.Pool, mutex *Mutex) {
 	n := 0
 	values := getPoolValues(ctx, pools, mutex.name)
 	for _, value := range values {

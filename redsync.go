@@ -14,11 +14,11 @@ const (
 
 // Redsync provides a simple method for creating distributed mutexes using multiple Redis connection pools.
 type Redsync struct {
-	pools []redis.Pool
+	pools []*redis.Pool
 }
 
 // New creates and returns a new Redsync instance from given Redis connection pools.
-func New(pools ...redis.Pool) *Redsync {
+func New(pools ...*redis.Pool) *Redsync {
 	return &Redsync{
 		pools: pools,
 	}
@@ -143,7 +143,7 @@ func WithShufflePools(b bool) Option {
 }
 
 // randomPools shuffles Redis pools.
-func randomPools(pools []redis.Pool) {
+func randomPools(pools []*redis.Pool) {
 	rand.Shuffle(len(pools), func(i, j int) {
 		pools[i], pools[j] = pools[j], pools[i]
 	})
