@@ -12,10 +12,13 @@ import (
 	"syscall"
 )
 
-const (
+var (
 	// ready is the string redis-server prints to stdout after starting
 	// successfully.
-	ready = "The server is now ready to accept connections"
+	ready = []string{
+		"The server is now ready to accept connections",
+		"Ready to accept connections",
+	}
 )
 
 // Server encapsulates the configuration, starting, and stopping of a single
@@ -59,12 +62,8 @@ func Start(config Config) (server *Server, err error) {
 		return server, err
 	}
 
-	fmt.Println("!!!")
-
 	// Block until Redis is ready to accept connections.
 	err = server.waitFor(ready)
-
-	fmt.Println("@@@")
 
 	return server, err
 }
@@ -102,16 +101,17 @@ func writeConfig(config Config, w io.WriteCloser) (err error) {
 }
 
 // waitFor blocks until redis-server prints the given string to stdout.
-func (s *Server) waitFor(search string) (err error) {
+func (s *Server) waitFor(search []string) (err error) {
 	var line string
 
 	scanner := bufio.NewScanner(s.stdout)
 	for scanner.Scan() {
 		line = scanner.Text()
-		fmt.Println(line)
 		fmt.Fprintf(&s.stdoutBuf, "%s\n", line)
-		if strings.Contains(line, search) {
-			return nil
+		for _, s := range search {
+			if strings.Contains(line, s) {
+				return nil
+			}
 		}
 	}
 	err = scanner.Err()
