@@ -19,8 +19,8 @@ import (
 	rueidis "github.com/go-redsync/redsync/v4/redis/rueidis"
 	redigolib "github.com/gomodule/redigo/redis"
 	goredislib_v9 "github.com/redis/go-redis/v9"
-	rueidislib "github.com/rueian/rueidis"
-	"github.com/rueian/rueidis/rueidiscompat"
+	rueidislib "github.com/redis/rueidis"
+	"github.com/redis/rueidis/rueidiscompat"
 	"github.com/stvp/tempredis"
 )
 
