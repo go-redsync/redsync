@@ -50,6 +50,16 @@ func (m *Mutex) Until() time.Time {
 	return m.until
 }
 
+// TryLock only attempts to lock m once and returns immediately regardless of success or failure without retrying.
+func (m *Mutex) TryLock() error {
+	return m.TryLockContext(context.Background())
+}
+
+// TryLockContext only attempts to lock m once and returns immediately regardless of success or failure without retrying.
+func (m *Mutex) TryLockContext(ctx context.Context) error {
+	return m.lockContext(ctx, 1)
+}
+
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) Lock() error {
 	return m.LockContext(context.Background())
@@ -57,6 +67,11 @@ func (m *Mutex) Lock() error {
 
 // LockContext locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) LockContext(ctx context.Context) error {
+	return m.lockContext(ctx, m.tries)
+}
+
+// lockContext locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
+func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -67,7 +82,7 @@ func (m *Mutex) LockContext(ctx context.Context) error {
 	}
 
 	var timer *time.Timer
-	for i := 0; i < m.tries; i++ {
+	for i := 0; i < tries; i++ {
 		if i != 0 {
 			if timer == nil {
 				timer = time.NewTimer(m.delayFunc(i))
