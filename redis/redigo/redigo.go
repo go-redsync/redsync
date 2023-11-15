@@ -9,8 +9,13 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
+type Pool interface {
+	Get() redis.Conn
+	GetContext(ctx context.Context) (redis.Conn, error)
+}
+
 type pool struct {
-	delegate *redis.Pool
+	delegate Pool
 }
 
 func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
@@ -25,7 +30,7 @@ func (p *pool) Get(ctx context.Context) (redsyncredis.Conn, error) {
 }
 
 // NewPool returns a Redigo-based pool implementation.
-func NewPool(delegate *redis.Pool) redsyncredis.Pool {
+func NewPool(delegate Pool) redsyncredis.Pool {
 	return &pool{delegate}
 }
 
