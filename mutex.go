@@ -134,6 +134,9 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 
 // Unlock unlocks m and returns the status of unlock.
 func (m *Mutex) Unlock() (bool, error) {
+	if m.value == "" {
+		return true, nil
+	}
 	return m.UnlockContext(context.Background())
 }
 
