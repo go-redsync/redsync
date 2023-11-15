@@ -139,6 +139,9 @@ func (m *Mutex) Unlock() (bool, error) {
 
 // UnlockContext unlocks m and returns the status of unlock.
 func (m *Mutex) UnlockContext(ctx context.Context) (bool, error) {
+	if m.value == "" {
+		return true, nil
+	}
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 		return m.release(ctx, pool, m.value)
 	})
