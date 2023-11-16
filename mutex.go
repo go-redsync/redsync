@@ -231,8 +231,11 @@ func (m *Mutex) acquire(ctx context.Context, pool redis.Pool, value string) (boo
 }
 
 var deleteScript = redis.NewScript(1, `
-	if redis.call("GET", KEYS[1]) == ARGV[1] then
+	local val = redis.call("GET", KEYS[1])
+	if val == ARGV[1] then
 		return redis.call("DEL", KEYS[1])
+	elseif val == false then
+		return -1
 	else
 		return 0
 	end
@@ -247,6 +250,9 @@ func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (boo
 	status, err := conn.Eval(deleteScript, m.name, value)
 	if err != nil {
 		return false, err
+	}
+	if status == int64(-1) {
+		return false, ErrLockAlreadyExpired
 	}
 	return status != int64(0), nil
 }
@@ -298,6 +304,8 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 		r := <-ch
 		if r.statusOK {
 			n++
+		} else if r.err == ErrLockAlreadyExpired {
+			err = multierror.Append(err, ErrLockAlreadyExpired)
 		} else if r.err != nil {
 			err = multierror.Append(err, &RedisError{Node: r.node, Err: r.err})
 		} else {
