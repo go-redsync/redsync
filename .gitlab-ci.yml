@@ -36,7 +36,7 @@ test:build:
       - test.out/*
 
 test:run:
-  image: redis:7.2.3-alpine
+  image: redis:7.2.3
   stage: test
   needs:
     - test:build
