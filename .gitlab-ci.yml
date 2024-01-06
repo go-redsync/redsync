@@ -24,9 +24,23 @@ build:
   script:
     - go build ./...
 
-test:
+test:build:
   stage: test
   needs:
     - build
   script:
-    - go test -race ./...
+    - go test -race -c -o redsync_test ./...
+  artifacts:
+    expire_in: 3 hours
+    paths:
+      - redsync_test
+
+test:run:
+  image: redis:7.2.3-alpine
+  stage: test
+  needs:
+    - test:build
+  dependencies:
+    - test:build
+  script:
+    - ./redsync_test
