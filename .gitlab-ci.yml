@@ -46,5 +46,5 @@ test:run:
     - |
       for f in test.out/*; do
         chmod +x $f
-        ./$f
+        ./$f -test.v
       done
