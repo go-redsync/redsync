@@ -43,4 +43,7 @@ test:run:
   dependencies:
     - test:build
   script:
-    - make test.run
+    - |
+      for f in test.out/*; do
+        $$f
+      done
