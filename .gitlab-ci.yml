@@ -45,5 +45,5 @@ test:run:
   script:
     - |
       for f in test.out/*; do
-        $$f
+        $f
       done
