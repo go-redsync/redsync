@@ -29,11 +29,11 @@ test:build:
   needs:
     - build
   script:
-    - go test -race -c -o . ./...
+    - make test.build
   artifacts:
     expire_in: 3 hours
     paths:
-      - redsync.test
+      - test.out/*
 
 test:run:
   image: redis:7.2.3-alpine
@@ -43,4 +43,4 @@ test:run:
   dependencies:
     - test:build
   script:
-    - ./redsync.test
+    - make test.run
