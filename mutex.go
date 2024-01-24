@@ -260,6 +260,8 @@ func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (boo
 var touchScript = redis.NewScript(1, `
 	if redis.call("GET", KEYS[1]) == ARGV[1] then
 		return redis.call("PEXPIRE", KEYS[1], ARGV[2])
+	elseif redis.call("SET", KEYS[1], ARGV[1], "PX", ARGV[2], "NX") then
+		return 1
 	else
 		return 0
 	end
