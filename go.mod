@@ -8,7 +8,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/gomodule/redigo v1.8.9
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/redis/go-redis/v9 v9.0.2
+	github.com/redis/go-redis/v9 v9.4.0
 	github.com/redis/rueidis v1.0.19
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	golang.org/x/sync v0.3.0
