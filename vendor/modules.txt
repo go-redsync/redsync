@@ -41,8 +41,8 @@ github.com/hashicorp/errwrap
 # github.com/hashicorp/go-multierror v1.1.1
 ## explicit; go 1.13
 github.com/hashicorp/go-multierror
-# github.com/redis/go-redis/v9 v9.0.2
-## explicit; go 1.17
+# github.com/redis/go-redis/v9 v9.4.0
+## explicit; go 1.18
 github.com/redis/go-redis/v9
 github.com/redis/go-redis/v9/internal
 github.com/redis/go-redis/v9/internal/hashtag
