@@ -139,7 +139,7 @@ func TestMutexExtend(t *testing.T) {
 	}
 }
 
-func TestMutexExtendExpired(t *testing.T) {
+func TestMutexExtendExpiredAcquiresLockAgain(t *testing.T) {
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
 			mutexes := newTestMutexes(v.pools, k+"-test-mutex-extend", 1)
@@ -154,12 +154,9 @@ func TestMutexExtendExpired(t *testing.T) {
 
 			time.Sleep(1 * time.Second)
 
-			ok, err := mutex.Extend()
-			if err == nil {
-				t.Fatalf("mutex extend didn't fail")
-			}
-			if ok {
-				t.Fatalf("Expected ok == false, got %v", ok)
+			_, err = mutex.Extend()
+			if err != nil {
+				t.Fatalf("mutex didn't extend")
 			}
 		})
 	}
