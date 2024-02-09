@@ -162,6 +162,39 @@ func TestMutexExtendExpiredAcquiresLockAgain(t *testing.T) {
 	}
 }
 
+func TestMutexExtendExpiredFailsIfLockIsAlreadyTaken(t *testing.T) {
+	for k, v := range makeCases(8) {
+		t.Run(k, func(t *testing.T) {
+			firstMutex := newTestMutexes(v.pools, k+"-test-mutex-extend", 1)[0]
+			firstMutex.expiry = 500 * time.Millisecond
+
+			err := firstMutex.Lock()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
+			}
+			defer firstMutex.Unlock()
+
+			time.Sleep(1 * time.Second)
+
+			secondMutex := newTestMutexes(v.pools, k+"-test-mutex-extend", 1)[0]
+			firstMutex.expiry = 500 * time.Millisecond
+			err = secondMutex.Lock()
+			defer secondMutex.Unlock()
+			if err != nil {
+				t.Fatalf("second mutex couldn't lock")
+			}
+
+			ok, err := firstMutex.Extend()
+			if err == nil {
+				t.Fatalf("mutex extend didn't fail")
+			}
+			if ok {
+				t.Fatalf("Expected ok == false, got %v", ok)
+			}
+		})
+	}
+}
+
 func TestMutexUnlockExpired(t *testing.T) {
 	for k, v := range makeCases(8) {
 		t.Run(k, func(t *testing.T) {
