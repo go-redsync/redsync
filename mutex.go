@@ -26,11 +26,12 @@ type Mutex struct {
 
 	quorum int
 
-	genValueFunc func() (string, error)
-	value        string
-	until        time.Time
-	shuffle      bool
-	failFast     bool
+	genValueFunc  func() (string, error)
+	value         string
+	until         time.Time
+	shuffle       bool
+	failFast      bool
+	setNXOnExtend bool
 
 	pools []redis.Pool
 }
@@ -257,11 +258,19 @@ func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (boo
 	return status != int64(0), nil
 }
 
-var touchScript = redis.NewScript(1, `
+var touchWithSetNXScript = redis.NewScript(1, `
 	if redis.call("GET", KEYS[1]) == ARGV[1] then
 		return redis.call("PEXPIRE", KEYS[1], ARGV[2])
 	elseif redis.call("SET", KEYS[1], ARGV[1], "PX", ARGV[2], "NX") then
 		return 1
+	else
+		return 0
+	end
+`)
+
+var touchScript = redis.NewScript(1, `
+	if redis.call("GET", KEYS[1]) == ARGV[1] then
+		return redis.call("PEXPIRE", KEYS[1], ARGV[2])
 	else
 		return 0
 	end
@@ -273,6 +282,12 @@ func (m *Mutex) touch(ctx context.Context, pool redis.Pool, value string, expiry
 		return false, err
 	}
 	defer conn.Close()
+
+	touchScript := touchScript
+	if m.setNXOnExtend {
+		touchScript = touchWithSetNXScript
+	}
+
 	status, err := conn.Eval(touchScript, m.name, value, expiry)
 	if err != nil {
 		// extend failed: clean up locks

@@ -87,6 +87,16 @@ func WithRetryDelay(delay time.Duration) Option {
 	})
 }
 
+// WithSetNXOnExtend improves extending logic to extend the key if exist
+// and if not, tries to set a new key in redis
+// Useful if your redises restart often and you want to reduce the chances of losing the lock
+// Read this MR for more info: https://github.com/go-redsync/redsync/pull/149
+func WithSetNXOnExtend() Option {
+	return OptionFunc(func(m *Mutex) {
+		m.setNXOnExtend = true
+	})
+}
+
 // WithRetryDelayFunc can be used to override default delay behavior.
 func WithRetryDelayFunc(delayFunc DelayFunc) Option {
 	return OptionFunc(func(m *Mutex) {
