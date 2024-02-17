@@ -154,7 +154,62 @@ func TestMutexExtendExpired(t *testing.T) {
 
 			time.Sleep(1 * time.Second)
 
-			ok, err := mutex.Extend()
+			_, err = mutex.Extend()
+			if err == nil {
+				t.Fatalf("mutex extend didn't fail")
+			}
+		})
+	}
+}
+
+func TestSetNXOnExtendAcquiresLockWhenKeyIsExpired(t *testing.T) {
+	for k, v := range makeCases(8) {
+		t.Run(k, func(t *testing.T) {
+			mutexes := newTestMutexes(v.pools, k+"-test-mutex-extend", 1)
+			mutex := mutexes[0]
+			mutex.setNXOnExtend = true
+			mutex.expiry = 500 * time.Millisecond
+
+			err := mutex.Lock()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
+			}
+			defer mutex.Unlock()
+
+			time.Sleep(1 * time.Second)
+
+			_, err = mutex.Extend()
+			if err != nil {
+				t.Fatalf("mutex didn't extend")
+			}
+		})
+	}
+}
+
+func TestSetNXOnExtendFailsToAcquireLockWhenKeyIsTaken(t *testing.T) {
+	for k, v := range makeCases(8) {
+		t.Run(k, func(t *testing.T) {
+			firstMutex := newTestMutexes(v.pools, k+"-test-mutex-extend", 1)[0]
+			firstMutex.expiry = 500 * time.Millisecond
+
+			err := firstMutex.Lock()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
+			}
+			defer firstMutex.Unlock()
+
+			time.Sleep(1 * time.Second)
+
+			secondMutex := newTestMutexes(v.pools, k+"-test-mutex-extend", 1)[0]
+			firstMutex.expiry = 500 * time.Millisecond
+			err = secondMutex.Lock()
+			defer secondMutex.Unlock()
+			if err != nil {
+				t.Fatalf("second mutex couldn't lock")
+			}
+
+			ok, err := firstMutex.Extend()
+			firstMutex.setNXOnExtend = true
 			if err == nil {
 				t.Fatalf("mutex extend didn't fail")
 			}
