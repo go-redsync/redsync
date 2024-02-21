@@ -290,14 +290,6 @@ func (m *Mutex) touch(ctx context.Context, pool redis.Pool, value string, expiry
 
 	status, err := conn.Eval(touchScript, m.name, value, expiry)
 	if err != nil {
-		// extend failed: clean up locks
-		_, _ = func() (int, error) {
-			ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(float64(m.expiry)*m.timeoutFactor)))
-			defer cancel()
-			return m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
-				return m.release(ctx, pool, value)
-			})
-		}()
 		return false, err
 	}
 	return status != int64(0), nil
