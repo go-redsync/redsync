@@ -41,14 +41,10 @@ type RedisError struct {
 	Err  error
 }
 
-func (err RedisError) Error() string {
-	return fmt.Sprintf("node #%d: %s", err.Node, err.Err)
+func (e RedisError) Error() string {
+	return fmt.Sprintf("node #%d: %s", e.Node, e.Err)
 }
 
-func (err RedisError) Is(target error) bool {
-	return errors.Is(err.Err, target)
-}
-
-func (err RedisError) As(target any) bool {
-	return errors.As(err.Err, target)
+func (e RedisError) Unwrap() error {
+	return e.Err
 }
