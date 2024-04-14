@@ -125,7 +125,7 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 				return m.release(ctx, pool, value)
 			})
 		}()
-		if i == m.tries-1 && err != nil {
+		if i == tries-1 && err != nil {
 			return err
 		}
 	}
