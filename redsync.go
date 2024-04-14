@@ -97,6 +97,13 @@ func WithSetNXOnExtend() Option {
 	})
 }
 
+// WithAutoExtend implement logic to auto extend
+func WithAutoExtend() Option {
+	return OptionFunc(func(m *Mutex) {
+		m.isAutoExtend = true
+	})
+}
+
 // WithRetryDelayFunc can be used to override default delay behavior.
 func WithRetryDelayFunc(delayFunc DelayFunc) Option {
 	return OptionFunc(func(m *Mutex) {

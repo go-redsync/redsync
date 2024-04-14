@@ -33,6 +33,10 @@ type Mutex struct {
 	failFast      bool
 	setNXOnExtend bool
 
+	isAutoExtend     bool
+	autoExtendCtx    context.Context
+	autoExtendCancel context.CancelFunc
+
 	pools []redis.Pool
 }
 
@@ -116,6 +120,10 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 		if n >= m.quorum && now.Before(until) {
 			m.value = value
 			m.until = until
+			if m.isAutoExtend {
+				m.autoExtendCtx, m.autoExtendCancel = context.WithCancel(ctx)
+				go m.autoRenew()
+			}
 			return nil
 		}
 		_, _ = func() (int, error) {
@@ -170,6 +178,20 @@ func (m *Mutex) ExtendContext(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 	return false, ErrExtendFailed
+}
+
+func (m *Mutex) autoRenew() {
+	ticker := time.NewTicker(m.expiry / 2)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-m.autoExtendCtx.Done():
+			return
+		case <-ticker.C:
+			m.ExtendContext(m.autoExtendCtx)
+		}
+	}
 }
 
 // Valid returns true if the lock acquired through m is still valid. It may
@@ -248,6 +270,9 @@ func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (boo
 		return false, err
 	}
 	defer conn.Close()
+	if m.autoExtendCancel != nil {
+		m.autoExtendCancel()
+	}
 	status, err := conn.Eval(deleteScript, m.name, value)
 	if err != nil {
 		return false, err
