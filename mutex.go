@@ -331,7 +331,7 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 		}
 
 		if m.failFast {
-			// fast retrun
+			// fast return
 			if n >= m.quorum {
 				return n, err
 			}
