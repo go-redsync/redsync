@@ -189,7 +189,10 @@ func (m *Mutex) autoRenew() {
 		case <-m.autoExtendCtx.Done():
 			return
 		case <-ticker.C:
-			m.ExtendContext(m.autoExtendCtx)
+			extended, err := m.ExtendContext(m.autoExtendCtx)
+			if err != nil || !extended {
+				return
+			}
 		}
 	}
 }
