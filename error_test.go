@@ -16,7 +16,7 @@ func TestRedisErrorIs(t *testing.T) {
 	for k, v := range cases {
 
 		t.Run(k, func(t *testing.T) {
-			err := RedisError{
+			err := &RedisError{
 				Node: 0,
 				Err:  v,
 			}
@@ -39,7 +39,7 @@ func TestRedisErrorAs(t *testing.T) {
 	for k, v := range cases {
 
 		t.Run(k, func(t *testing.T) {
-			err := RedisError{
+			err := &RedisError{
 				Node: 0,
 				Err:  v,
 			}

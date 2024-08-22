@@ -21,7 +21,7 @@ type ErrTaken struct {
 	Nodes []int
 }
 
-func (err ErrTaken) Error() string {
+func (err *ErrTaken) Error() string {
 	return fmt.Sprintf("lock already taken, locked nodes: %v", err.Nodes)
 }
 
@@ -31,7 +31,7 @@ type ErrNodeTaken struct {
 	Node int
 }
 
-func (err ErrNodeTaken) Error() string {
+func (err *ErrNodeTaken) Error() string {
 	return fmt.Sprintf("node #%d: lock already taken", err.Node)
 }
 
@@ -41,10 +41,10 @@ type RedisError struct {
 	Err  error
 }
 
-func (e RedisError) Error() string {
+func (e *RedisError) Error() string {
 	return fmt.Sprintf("node #%d: %s", e.Node, e.Err)
 }
 
-func (e RedisError) Unwrap() error {
+func (e *RedisError) Unwrap() error {
 	return e.Err
 }

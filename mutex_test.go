@@ -265,8 +265,11 @@ func TestMutexQuorum(t *testing.T) {
 					assertAcquired(ctx, t, v.pools, mutex)
 				} else {
 					err := mutex.Lock()
-					if errors.Is(err, &ErrNodeTaken{}) {
-						t.Fatalf("Expected err == %q, got %q", ErrNodeTaken{}, err)
+					target := &ErrNodeTaken{
+						Node: 0,
+					}
+					if errors.Is(err, target) {
+						t.Fatalf("Expected err == %q, got %q", target, err)
 					}
 				}
 			}
