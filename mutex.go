@@ -95,7 +95,7 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 			case <-ctx.Done():
 				timer.Stop()
 				// Exit early if the context is done.
-				return ErrFailed
+				return ctx.Err()
 			case <-timer.C:
 				// Fall-through when the delay timer completes.
 			}
@@ -130,7 +130,7 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 		}
 	}
 
-	return ErrFailed
+	return ErrAllRetriesExhausted
 }
 
 // Unlock unlocks m and returns the status of unlock.

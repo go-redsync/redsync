@@ -5,9 +5,9 @@ import (
 	"fmt"
 )
 
-// ErrFailed is the error resulting if Redsync fails to acquire the lock after
+// ErrAllRetriesExhausted is the error resulting if Redsync fails to acquire the lock after
 // exhausting all retries.
-var ErrFailed = errors.New("redsync: failed to acquire lock")
+var ErrAllRetriesExhausted = errors.New("redsync: failed to acquire lock due to all retries being exhausted")
 
 // ErrExtendFailed is the error resulting if Redsync fails to extend the
 // lock.

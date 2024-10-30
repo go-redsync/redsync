@@ -8,9 +8,9 @@ import (
 
 func TestRedisErrorIs(t *testing.T) {
 	cases := map[string]error{
-		"defined_error":  ErrFailed,
+		"defined_error":  ErrAllRetriesExhausted,
 		"other_error":    errors.New("other error"),
-		"wrapping_error": fmt.Errorf("wrapping: %w", ErrFailed),
+		"wrapping_error": fmt.Errorf("wrapping: %w", ErrAllRetriesExhausted),
 	}
 
 	for k, v := range cases {
