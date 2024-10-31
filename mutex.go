@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"time"
 
 	"github.com/go-redsync/redsync/v4/redis"
@@ -95,7 +96,7 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 			case <-ctx.Done():
 				timer.Stop()
 				// Exit early if the context is done.
-				return ctx.Err()
+				return fmt.Errorf("redsync: failed to acquire lock, %w", ctx.Err())
 			case <-timer.C:
 				// Fall-through when the delay timer completes.
 			}
