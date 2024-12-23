@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"log"
 	"time"
 
 	"github.com/go-redsync/redsync/v4/redis"
@@ -34,6 +35,9 @@ type Mutex struct {
 	setNXOnExtend bool
 
 	pools []redis.Pool
+
+	watchdogTimeout time.Duration
+	stopWatchdog    chan struct{}
 }
 
 // Name returns mutex name (i.e. the Redis key).
@@ -63,7 +67,15 @@ func (m *Mutex) TryLockContext(ctx context.Context) error {
 
 // Lock locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
 func (m *Mutex) Lock() error {
-	return m.LockContext(context.Background())
+	err := m.LockContext(context.Background())
+	if err != nil {
+		return err
+	}
+	if m.watchdogTimeout > 0 {
+		m.stopWatchdog = make(chan struct{})
+		go m.startWatchdog()
+	}
+	return nil
 }
 
 // LockContext locks m. In case it returns an error on failure, you may retry to acquire the lock by calling this method again.
@@ -135,6 +147,9 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 
 // Unlock unlocks m and returns the status of unlock.
 func (m *Mutex) Unlock() (bool, error) {
+	if m.stopWatchdog != nil {
+		close(m.stopWatchdog)
+	}
 	return m.UnlockContext(context.Background())
 }
 
@@ -347,4 +362,22 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 		return n, &ErrTaken{Nodes: taken}
 	}
 	return n, err
+}
+
+func (m *Mutex) startWatchdog() {
+	ticker := time.NewTicker(m.watchdogTimeout / 2)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			ok, err := m.ExtendContext(context.Background())
+			if !ok || err != nil {
+				log.Printf("Watchdog failed to extend lock: %v", err)
+			}
+		case <-m.stopWatchdog:
+			log.Println("Watchdog stopped")
+			return
+		}
+	}
 }

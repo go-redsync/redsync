@@ -69,6 +69,12 @@ func WithExpiry(expiry time.Duration) Option {
 	})
 }
 
+func WithWatchdogTimeout(timeout time.Duration) Option {
+	return OptionFunc(func(m *Mutex) {
+		m.watchdogTimeout = timeout
+	})
+}
+
 // WithTries can be used to set the number of times lock acquire is attempted.
 // The default value is 32.
 func WithTries(tries int) Option {

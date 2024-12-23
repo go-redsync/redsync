@@ -431,3 +431,29 @@ func assertAcquired(ctx context.Context, t *testing.T, pools []redis.Pool, mutex
 		t.Fatalf("Expected n >= %d, got %d", mutex.quorum, n)
 	}
 }
+
+func TestMutexWatchdog(t *testing.T) {
+	for k, v := range makeCases(4) {
+		t.Run(k, func(t *testing.T) {
+			rs := New(v.pools...)
+			key := k + "-test-watchdog"
+			mutex := rs.NewMutex(key, WithExpiry(2*time.Second), WithWatchdogTimeout(2*time.Second))
+			err := mutex.Lock()
+			if err != nil {
+				t.Fatalf("mutex lock failed: %s", err)
+			}
+			defer mutex.Unlock()
+			time.Sleep(5 * time.Second)
+			if time.Now().Before(mutex.Until()) {
+				fmt.Println("Lock is still valid")
+			} else {
+				t.Fatalf("expected the mutex to still be valid, but it is not")
+			}
+			mutex.Unlock()
+			time.Sleep(4 * time.Second)
+			if time.Now().Before(mutex.Until()) {
+				t.Fatalf("expected the mutex to be invalid after expiration, but it is still valid")
+			}
+		})
+	}
+}
