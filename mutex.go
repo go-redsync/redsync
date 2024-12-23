@@ -374,6 +374,7 @@ func (m *Mutex) startWatchdog() {
 			ok, err := m.ExtendContext(context.Background())
 			if !ok || err != nil {
 				log.Printf("Watchdog failed to extend lock: %v", err)
+				return
 			}
 		case <-m.stopWatchdog:
 			log.Println("Watchdog stopped")
