@@ -3,7 +3,6 @@ package redsync
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -13,12 +12,6 @@ import (
 func WithKeys(keys []string) Option {
 	return OptionFunc(func(m *Mutex) {
 		m.keysForMultipleLock = keys
-	})
-}
-
-func WithMultipleLockTTL(value time.Duration) Option {
-	return OptionFunc(func(m *Mutex) {
-		m.keysForMultipleLockTTL = value.Milliseconds()
 	})
 }
 
@@ -76,9 +69,10 @@ var multipleLockScript = `
 	end
 	`
 
-var defaultMultipleLockTTL = time.Second.Milliseconds()
-
-var ErrNothingToLock = errors.New("nothing to lock")
+var (
+	ErrNothingToLock = errors.New("nothing to lock")
+	ErrEmptyExpire   = errors.New("empty expire")
+)
 
 func (m *Mutex) MultipleLockContext(ctx context.Context) error {
 	return m.multipleLock(ctx, m.tries)
@@ -88,7 +82,6 @@ func (m *Mutex) UnlockMultipleContext(ctx context.Context) (bool, error) {
 	n, err := m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 		return m.multipleRelease(ctx, pool, m.keysForMultipleLock)
 	})
-	fmt.Println("N ERR", n, err)
 	if n < m.quorum {
 		return false, err
 	}
@@ -104,8 +97,8 @@ func (m *Mutex) multipleLock(ctx context.Context, tries int) error {
 		return ErrNothingToLock
 	}
 
-	if m.keysForMultipleLockTTL == 0 {
-		m.keysForMultipleLockTTL = defaultMultipleLockTTL // default lock for keys 1 seconds
+	if m.expiry == 0 {
+		return ErrEmptyExpire
 	}
 
 	value, err := m.genValueFunc()

@@ -36,8 +36,7 @@ type Mutex struct {
 	pools []redis.Pool
 
 	// multiple lock params
-	keysForMultipleLock    []string
-	keysForMultipleLockTTL int64 // expire in milliseconds
+	keysForMultipleLock []string
 }
 
 // Name returns mutex name (i.e. the Redis key).
