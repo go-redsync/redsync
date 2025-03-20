@@ -34,6 +34,10 @@ type Mutex struct {
 	setNXOnExtend bool
 
 	pools []redis.Pool
+
+	// multiple lock params
+	keysForMultipleLock    []string
+	keysForMultipleLockTTL int64 // expire in milliseconds
 }
 
 // Name returns mutex name (i.e. the Redis key).
