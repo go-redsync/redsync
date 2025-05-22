@@ -73,7 +73,7 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	for i := 0; i < ServerPoolSize*ServerPools; i++ {
+	for i := range ServerPoolSize * ServerPools {
 		server, err := tempredis.Start(tempredis.Config{
 			"port": strconv.Itoa(51200 + i),
 		})
@@ -108,7 +108,7 @@ func newMockPoolsRedigo(n int) []redis.Pool {
 
 	offset := RedigoBlock * ServerPoolSize
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		server := servers[i+offset]
 		pools[i] = redigo.NewPool(&redigolib.Pool{
 			MaxIdle:     3,
@@ -130,7 +130,7 @@ func newMockPoolsGoredis(n int) []redis.Pool {
 
 	offset := GoredisBlock * ServerPoolSize
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		client := goredislib.NewClient(&goredislib.Options{
 			Network: "unix",
 			Addr:    servers[i+offset].Socket(),
@@ -145,7 +145,7 @@ func newMockPoolsGoredisV7(n int) []redis.Pool {
 
 	offset := GoredisV7Block * ServerPoolSize
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		client := goredislib_v7.NewClient(&goredislib_v7.Options{
 			Network: "unix",
 			Addr:    servers[i+offset].Socket(),
@@ -160,7 +160,7 @@ func newMockPoolsGoredisV8(n int) []redis.Pool {
 
 	offset := GoredisV8Block * ServerPoolSize
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		client := goredislib_v8.NewClient(&goredislib_v8.Options{
 			Network: "unix",
 			Addr:    servers[i+offset].Socket(),
@@ -175,7 +175,7 @@ func newMockPoolsGoredisV9(n int) []redis.Pool {
 
 	offset := GoredisV9Block * ServerPoolSize
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		client := goredislib_v9.NewClient(&goredislib_v9.Options{
 			Network: "unix",
 			Addr:    servers[i+offset].Socket(),
@@ -190,7 +190,7 @@ func newMockPoolsRueidis(n int) []redis.Pool {
 
 	offset := RueidisBlock * ServerPoolSize
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		client, err := rueidislib.NewClient(rueidislib.ClientOption{
 			InitAddress: []string{"127.0.0.1:" + strconv.Itoa(51200+i+offset)},
 		})

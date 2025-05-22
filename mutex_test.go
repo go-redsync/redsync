@@ -250,7 +250,7 @@ func TestMutexQuorum(t *testing.T) {
 	ctx := context.Background()
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
-			for mask := 0; mask < 1<<uint(len(v.pools)); mask++ {
+			for mask := range 1 << len(v.pools) {
 				mutexes := newTestMutexes(v.pools, k+"-test-mutex-partial-"+strconv.Itoa(mask), 1)
 				mutex := mutexes[0]
 				mutex.tries = 1
@@ -387,7 +387,7 @@ func clogPools(pools []redis.Pool, mask int, mutex *Mutex) int {
 
 func newTestMutexes(pools []redis.Pool, name string, n int) []*Mutex {
 	mutexes := make([]*Mutex, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		mutexes[i] = &Mutex{
 			name:          name + "-" + strconv.Itoa(i),
 			expiry:        8 * time.Second,
