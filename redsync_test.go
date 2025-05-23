@@ -80,13 +80,12 @@ func TestMain(m *testing.M) {
 		if err != nil {
 			panic(err)
 		}
+		defer server.Term()
+
 		servers = append(servers, server)
 	}
-	result := m.Run()
-	for _, server := range servers {
-		_ = server.Term()
-	}
-	os.Exit(result)
+
+	os.Exit(m.Run())
 }
 
 func TestRedsync(t *testing.T) {
