@@ -58,7 +58,7 @@ func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (in
 	args := keysAndArgs
 
 	if script.KeyCount > 0 {
-		for i := 0; i < script.KeyCount; i++ {
+		for i := range script.KeyCount {
 			keys[i] = keysAndArgs[i].(string)
 		}
 		args = keysAndArgs[script.KeyCount:]

@@ -18,21 +18,19 @@ func TestMutex(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			mutexes := newTestMutexes(v.pools, k+"-test-mutex", v.poolCount)
 			eg := errgroup.Group{}
-			for i, mutex := range mutexes {
-				func(i int, mutex *Mutex) {
-					eg.Go(func() error {
-						err := mutex.Lock()
-						if err != nil {
-							return err
-						}
-						defer mutex.Unlock()
+			for _, mutex := range mutexes {
+				eg.Go(func() error {
+					err := mutex.Lock()
+					if err != nil {
+						return err
+					}
+					defer mutex.Unlock()
 
-						if !isAcquired(ctx, v.pools, mutex) {
-							return fmt.Errorf("Expected n >= %d, got %d", mutex.quorum, countAcquiredPools(ctx, v.pools, mutex))
-						}
-						return nil
-					})
-				}(i, mutex)
+					if !isAcquired(ctx, v.pools, mutex) {
+						return fmt.Errorf("Expected n >= %d, got %d", mutex.quorum, countAcquiredPools(ctx, v.pools, mutex))
+					}
+					return nil
+				})
 			}
 			err := eg.Wait()
 			if err != nil {
@@ -48,31 +46,29 @@ func TestTryLock(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			mutexes := newTestMutexes(v.pools, k+"-test-trylock", v.poolCount)
 			eg := errgroup.Group{}
-			for i, mutex := range mutexes {
-				func(i int, mutex *Mutex) {
-					eg.Go(func() error {
-						err := mutex.TryLockContext(context.Background())
-						for {
-							if err == nil {
-								break
-							}
-
-							time.Sleep(100 * time.Millisecond) // 1ms
+			for _, mutex := range mutexes {
+				eg.Go(func() error {
+					err := mutex.TryLockContext(context.Background())
+					for {
+						if err == nil {
+							break
 						}
 
-						ok, err := mutex.Extend()
-						if err != nil || !ok {
-							t.Fatalf("extend failed: %v", err)
-						}
+						time.Sleep(100 * time.Millisecond) // 1ms
+					}
 
-						defer mutex.Unlock()
+					ok, err := mutex.Extend()
+					if err != nil || !ok {
+						t.Fatalf("extend failed: %v", err)
+					}
 
-						if !isAcquired(ctx, v.pools, mutex) {
-							return fmt.Errorf("Expected n >= %d, got %d", mutex.quorum, countAcquiredPools(ctx, v.pools, mutex))
-						}
-						return nil
-					})
-				}(i, mutex)
+					defer mutex.Unlock()
+
+					if !isAcquired(ctx, v.pools, mutex) {
+						return fmt.Errorf("Expected n >= %d, got %d", mutex.quorum, countAcquiredPools(ctx, v.pools, mutex))
+					}
+					return nil
+				})
 			}
 			err := eg.Wait()
 			if err != nil {
@@ -250,7 +246,7 @@ func TestMutexQuorum(t *testing.T) {
 	ctx := context.Background()
 	for k, v := range makeCases(4) {
 		t.Run(k, func(t *testing.T) {
-			for mask := 0; mask < 1<<uint(len(v.pools)); mask++ {
+			for mask := range 1 << len(v.pools) {
 				mutexes := newTestMutexes(v.pools, k+"-test-mutex-partial-"+strconv.Itoa(mask), 1)
 				mutex := mutexes[0]
 				mutex.tries = 1
@@ -387,7 +383,7 @@ func clogPools(pools []redis.Pool, mask int, mutex *Mutex) int {
 
 func newTestMutexes(pools []redis.Pool, name string, n int) []*Mutex {
 	mutexes := make([]*Mutex, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		mutexes[i] = &Mutex{
 			name:          name + "-" + strconv.Itoa(i),
 			expiry:        8 * time.Second,
