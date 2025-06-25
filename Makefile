@@ -21,4 +21,4 @@ lint:
 
 .PHONY: lint.tools.install
 lint.tools.install:
-	go install honnef.co/go/tools/cmd/staticcheck@2023.1.5
+	go install honnef.co/go/tools/cmd/staticcheck@2025.1.1
