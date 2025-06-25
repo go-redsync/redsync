@@ -6,7 +6,7 @@ cache:
   paths:
     - .go-build
 
-image: registry.furqansoftware.net/cardboard/golang:1.21.5-bullseye-0
+image: registry.furqansoftware.net/cardboard/golang:1.24.2-bullseye-0
 
 stages:
   - lint
@@ -16,8 +16,8 @@ stages:
 lint:
   stage: lint
   script:
-    - go install honnef.co/go/tools/cmd/staticcheck@2023.1.5
-    - staticcheck ./...
+    - make lint.tools.install
+    - make lint
 
 build:
   stage: build
