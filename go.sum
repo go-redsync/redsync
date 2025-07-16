@@ -55,8 +55,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/redis/go-redis/v9 v9.11.0 h1:E3S08Gl/nJNn5vkxd2i78wZxWAPNZgUNTp8WIJUAiIs=
 github.com/redis/go-redis/v9 v9.11.0/go.mod h1:huWgSWd8mW6+m0VPhJjSSQ+d6Nh1VICQ6Q5lHuCH/Iw=
-github.com/redis/rueidis v1.0.61 h1:AkbCMeTyjFSQraGaNYncg3unMCTYGr6Y8WOqGhDOQu4=
-github.com/redis/rueidis v1.0.61/go.mod h1:Lkhr2QTgcoYBhxARU7kJRO8SyVlgUuEkcJO1Y8MCluA=
+github.com/redis/rueidis v1.0.63 h1:zSt5focn0YgrgBAE5NcnAibyKf3ZKyv+eCQHk62jEFk=
+github.com/redis/rueidis v1.0.63/go.mod h1:Lkhr2QTgcoYBhxARU7kJRO8SyVlgUuEkcJO1Y8MCluA=
 github.com/redis/rueidis/mock v1.0.61 h1:n2Of5VW1V0BwNG/Bf/dzsc4cuNGqdELDz/PqMnFDtwI=
 github.com/redis/rueidis/mock v1.0.61/go.mod h1:5lJaNwMxfOf+m1iU/pOb6KjielODFTE5GsbOU/YU/iQ=
 github.com/redis/rueidis/rueidiscompat v1.0.61 h1:fPqNaWHaFi4iMJG2jZBGzbMmHTQy86YrQfRqxIQhRVM=
