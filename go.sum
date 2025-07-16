@@ -57,10 +57,10 @@ github.com/redis/go-redis/v9 v9.11.0 h1:E3S08Gl/nJNn5vkxd2i78wZxWAPNZgUNTp8WIJUA
 github.com/redis/go-redis/v9 v9.11.0/go.mod h1:huWgSWd8mW6+m0VPhJjSSQ+d6Nh1VICQ6Q5lHuCH/Iw=
 github.com/redis/rueidis v1.0.63 h1:zSt5focn0YgrgBAE5NcnAibyKf3ZKyv+eCQHk62jEFk=
 github.com/redis/rueidis v1.0.63/go.mod h1:Lkhr2QTgcoYBhxARU7kJRO8SyVlgUuEkcJO1Y8MCluA=
-github.com/redis/rueidis/mock v1.0.61 h1:n2Of5VW1V0BwNG/Bf/dzsc4cuNGqdELDz/PqMnFDtwI=
-github.com/redis/rueidis/mock v1.0.61/go.mod h1:5lJaNwMxfOf+m1iU/pOb6KjielODFTE5GsbOU/YU/iQ=
-github.com/redis/rueidis/rueidiscompat v1.0.61 h1:fPqNaWHaFi4iMJG2jZBGzbMmHTQy86YrQfRqxIQhRVM=
-github.com/redis/rueidis/rueidiscompat v1.0.61/go.mod h1:YeKaBmFsHJpcPvl6409OrRTjhcYSrF6z+kXCuzkf2Qw=
+github.com/redis/rueidis/mock v1.0.63 h1:mUqpTfIVk8pCq8pMwXq/EVLsTJbGcWBciPb+TSaSQ3k=
+github.com/redis/rueidis/mock v1.0.63/go.mod h1:h+6tcNggR64iVfL4qflMapenfWzJg2vEeng1Ps0WvcM=
+github.com/redis/rueidis/rueidiscompat v1.0.63 h1:Amcy88RAUCK/EYQo/2Fjc4uwSnGn7mAgJ1hOjNjv63E=
+github.com/redis/rueidis/rueidiscompat v1.0.63/go.mod h1:Ng06pYn9uhXoDKW3zDdzd9Wdsp3qTZ0vKgj8Q84Uhww=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 go.uber.org/mock v0.5.0 h1:KAMbZvZPyBPWgD14IrIQ38QCyjwpvVVV6K/bHl1IwQU=
