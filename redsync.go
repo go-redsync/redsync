@@ -2,6 +2,7 @@ package redsync
 
 import (
 	"math/rand"
+	"slices"
 	"time"
 
 	"github.com/go-redsync/redsync/v4/redis"
@@ -43,6 +44,8 @@ func (r *Redsync) NewMutex(name string, options ...Option) *Mutex {
 		o.Apply(m)
 	}
 	if m.shuffle {
+		// Create a copy to avoid data races between concurrent locks.
+		m.pools = slices.Clone(m.pools)
 		randomPools(m.pools)
 	}
 	return m
