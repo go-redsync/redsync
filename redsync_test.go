@@ -73,6 +73,10 @@ const (
 )
 
 func TestMain(m *testing.M) {
+	os.Exit(testRunner(m))
+}
+
+func testRunner(m *testing.M) int {
 	for i := range ServerPoolSize * ServerPools {
 		server, err := tempredis.Start(tempredis.Config{
 			"port": strconv.Itoa(51200 + i),
@@ -85,7 +89,7 @@ func TestMain(m *testing.M) {
 		servers = append(servers, server)
 	}
 
-	os.Exit(m.Run())
+	return m.Run()
 }
 
 func TestRedsync(t *testing.T) {
