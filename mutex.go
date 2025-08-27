@@ -102,9 +102,10 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 		}
 
 		start := time.Now()
+		adjustedTTL := time.Duration(float64(m.expiry) * m.timeoutFactor)
 
 		n, err := func() (int, error) {
-			ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(float64(m.expiry)*m.timeoutFactor)))
+			ctx, cancel := context.WithTimeout(ctx, adjustedTTL)
 			defer cancel()
 			return m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 				return m.acquire(ctx, pool, value)
@@ -112,16 +113,17 @@ func (m *Mutex) lockContext(ctx context.Context, tries int) error {
 		}()
 
 		now := time.Now()
-		until := now.Add(m.expiry - now.Sub(start) - time.Duration(int64(float64(m.expiry)*m.driftFactor)))
+		until := now.Add(m.expiry - now.Sub(start) - adjustedTTL)
 		if n >= m.quorum && now.Before(until) {
 			m.value = value
 			m.until = until
 			return nil
 		}
-		_, _ = func() (int, error) {
-			ctx, cancel := context.WithTimeout(ctx, time.Duration(int64(float64(m.expiry)*m.timeoutFactor)))
+
+		func() {
+			ctx, cancel := context.WithTimeout(ctx, adjustedTTL)
 			defer cancel()
-			return m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
+			m.actOnPoolsAsync(func(pool redis.Pool) (bool, error) {
 				return m.release(ctx, pool, value)
 			})
 		}()
@@ -304,11 +306,11 @@ func (m *Mutex) actOnPoolsAsync(actFn func(redis.Pool) (bool, error)) (int, erro
 
 	ch := make(chan result, len(m.pools))
 	for node, pool := range m.pools {
-		go func(node int, pool redis.Pool) {
+		go func() {
 			r := result{node: node}
 			r.statusOK, r.err = actFn(pool)
 			ch <- r
-		}(node, pool)
+		}()
 	}
 
 	var (
