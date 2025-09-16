@@ -1,6 +1,6 @@
 module github.com/go-redsync/redsync/v4
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/go-redis/redis v6.15.9+incompatible
@@ -12,7 +12,7 @@ require (
 	github.com/redis/rueidis v1.0.64
 	github.com/redis/rueidis/rueidiscompat v1.0.61
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
-	golang.org/x/sync v0.16.0
+	golang.org/x/sync v0.17.0
 )
 
 require (
