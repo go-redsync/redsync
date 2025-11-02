@@ -35,7 +35,7 @@ import (
 )
 
 func main() {
-	// Create a pool with go-redis (or redigo) which is the pool redisync will
+	// Create a pool with go-redis (or redigo) which is the pool redsync will
 	// use while communicating with Redis. This can also be any pool that
 	// implements the `redis.Pool` interface.
 	client := goredislib.NewClient(&goredislib.Options{
@@ -43,7 +43,7 @@ func main() {
 	})
 	pool := goredis.NewPool(client) // or, pool := redigo.NewPool(...)
 
-	// Create an instance of redisync to be used to obtain a mutual exclusion
+	// Create an instance of redsync to be used to obtain a mutual exclusion
 	// lock.
 	rs := redsync.New(pool)
 
