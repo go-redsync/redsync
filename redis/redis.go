@@ -2,7 +2,7 @@ package redis
 
 import (
 	"context"
-	"crypto/sha256"
+	"crypto/sha1"
 	"encoding/hex"
 	"io"
 	"time"
@@ -38,7 +38,7 @@ type Script struct {
 // SendHash methods.
 // Taken from https://github.com/gomodule/redigo/blob/46992b0f02f74066bcdfd9b03e33bc03abd10dc7/redis/script.go#L32-L41
 func NewScript(keyCount int, src string) *Script {
-	h := sha256.New()
+	h := sha1.New()
 	_, _ = io.WriteString(h, src)
 	return &Script{keyCount, src, hex.EncodeToString(h.Sum(nil))}
 }
