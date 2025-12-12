@@ -66,6 +66,14 @@ func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (in
 	return v, noErrNil(err)
 }
 
+func (c *conn) ScriptLoad(script *redsyncredis.Script) error {
+	v, err := c.delegate.Do("SCRIPT", "LOAD", script.Src)
+	if err == nil {
+		script.Hash = v.(string)
+	}
+	return err
+}
+
 func (c *conn) Close() error {
 	err := c.delegate.Close()
 	return noErrNil(err)

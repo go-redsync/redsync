@@ -2,9 +2,6 @@ package redis
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
-	"io"
 	"time"
 )
 
@@ -19,6 +16,7 @@ type Conn interface {
 	Set(name string, value string) (bool, error)
 	SetNX(name string, value string, expiry time.Duration) (bool, error)
 	Eval(script *Script, keysAndArgs ...interface{}) (interface{}, error)
+	ScriptLoad(script *Script) error
 	PTTL(name string) (time.Duration, error)
 	Close() error
 }
@@ -37,8 +35,6 @@ type Script struct {
 // the count as the first value in the keysAndArgs argument to the Do, Send and
 // SendHash methods.
 // Taken from https://github.com/gomodule/redigo/blob/46992b0f02f74066bcdfd9b03e33bc03abd10dc7/redis/script.go#L32-L41
-func NewScript(keyCount int, src string) *Script {
-	h := sha1.New()
-	_, _ = io.WriteString(h, src)
-	return &Script{keyCount, src, hex.EncodeToString(h.Sum(nil))}
+func NewScript(keyCount int, src, hash string) *Script {
+	return &Script{keyCount, src, hash}
 }

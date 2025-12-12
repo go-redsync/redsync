@@ -71,6 +71,14 @@ func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (in
 	return v, noErrNil(err)
 }
 
+func (c *conn) ScriptLoad(script *redsyncredis.Script) error {
+	v, err := c.delegate.ScriptLoad(script.Src).Result()
+	if err == nil {
+		script.Hash = v
+	}
+	return err
+}
+
 func (c *conn) Close() error {
 	// Not needed for this library
 	return nil

@@ -231,17 +231,6 @@ func (m *Mutex) acquire(ctx context.Context, pool redis.Pool, value string) (boo
 	return reply, nil
 }
 
-var deleteScript = redis.NewScript(1, `
-	local val = redis.call("GET", KEYS[1])
-	if val == ARGV[1] then
-		return redis.call("DEL", KEYS[1])
-	elseif val == false then
-		return -1
-	else
-		return 0
-	end
-`)
-
 func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (bool, error) {
 	conn, err := pool.Get(ctx)
 	if err != nil {
@@ -257,24 +246,6 @@ func (m *Mutex) release(ctx context.Context, pool redis.Pool, value string) (boo
 	}
 	return status != int64(0), nil
 }
-
-var touchWithSetNXScript = redis.NewScript(1, `
-	if redis.call("GET", KEYS[1]) == ARGV[1] then
-		return redis.call("PEXPIRE", KEYS[1], ARGV[2])
-	elseif redis.call("SET", KEYS[1], ARGV[1], "PX", ARGV[2], "NX") then
-		return 1
-	else
-		return 0
-	end
-`)
-
-var touchScript = redis.NewScript(1, `
-	if redis.call("GET", KEYS[1]) == ARGV[1] then
-		return redis.call("PEXPIRE", KEYS[1], ARGV[2])
-	else
-		return 0
-	end
-`)
 
 func (m *Mutex) touch(ctx context.Context, pool redis.Pool, value string, expiry int) (bool, error) {
 	conn, err := pool.Get(ctx)
