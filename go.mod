@@ -12,7 +12,7 @@ require (
 	github.com/redis/rueidis v1.0.69
 	github.com/redis/rueidis/rueidiscompat v1.0.69
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
-	golang.org/x/sync v0.18.0
+	golang.org/x/sync v0.19.0
 )
 
 require (
