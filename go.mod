@@ -23,3 +23,5 @@ require (
 )
 
 replace github.com/stvp/tempredis => github.com/hjr265/tempredis v0.0.0-20231015061547-ad8aa5a343a2
+
+retract v4.14.0
