@@ -6,7 +6,7 @@ cache:
   paths:
     - .go-build
 
-image: registry.furqansoftware.net/cardboard/golang:1.24.2-bullseye-0
+image: registry.furqansoftware.net/cardboard/golang:1.25.5-bullseye-0
 
 stages:
   - lint
