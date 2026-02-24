@@ -65,6 +65,12 @@ github.com/redis/rueidis/rueidiscompat v1.0.71 h1:wNZ//kEjMZgBM0KCk7ncOX8KmAgROU
 github.com/redis/rueidis/rueidiscompat v1.0.71/go.mod h1:esmCLJvaRzZoKlgB82G1bY7Iky5TnO9Rz+NlhbEccFI=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
+github.com/valkey-io/valkey-go v1.0.72 h1:iRWt1hJyOchcEgbHSkRY3aKkcBudxvMaVMsmxuYxuxE=
+github.com/valkey-io/valkey-go v1.0.72/go.mod h1:VGhZ6fs68Qrn2+OhH+6waZH27bjpgQOiLyUQyXuYK5k=
+github.com/valkey-io/valkey-go/mock v1.0.72 h1:rE8K/sjlX0SRldI70Rt4/MCrYl224XD4A4vkYegP1Iw=
+github.com/valkey-io/valkey-go/mock v1.0.72/go.mod h1:A4B8L3Wg85yAOl/GwNgkO/6aeGNXydwBl+86e20NQQY=
+github.com/valkey-io/valkey-go/valkeycompat v1.0.72 h1:Lyyr0kJ4QWwU8thgc2fqlCH49jG7hjR9ldhLRf4dE84=
+github.com/valkey-io/valkey-go/valkeycompat v1.0.72/go.mod h1:jimsD80fuh21KrRyr5bRZ5bJiP3CRaxAME+KxeOUTIw=
 go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=
 go.uber.org/mock v0.6.0/go.mod h1:KiVJ4BqZJaMj4svdfmHM0AUx4NJYO8ZNpPnZn1Z+BBU=
 go.yaml.in/yaml/v3 v3.0.4 h1:tfq32ie2Jv2UxXFdLJdh3jXuOzWiL1fo0bu/FbuKpbc=
