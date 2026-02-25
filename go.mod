@@ -9,7 +9,7 @@ require (
 	github.com/gomodule/redigo v1.9.3
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/redis/go-redis/v9 v9.17.3
-	github.com/redis/rueidis v1.0.71
+	github.com/redis/rueidis v1.0.72
 	github.com/redis/rueidis/rueidiscompat v1.0.71
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/valkey-io/valkey-go v1.0.72
