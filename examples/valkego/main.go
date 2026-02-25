@@ -25,6 +25,9 @@ func main() {
 			return d.DialContext(ctx, "unix", s)
 		},
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	pool := valkeygo.NewPool(valkeycompat.NewAdapter(client))
 
