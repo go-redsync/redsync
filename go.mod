@@ -1,6 +1,6 @@
 module github.com/go-redsync/redsync/v4
 
-go 1.24.9
+go 1.25.0
 
 require (
 	github.com/go-redis/redis v6.15.9+incompatible
@@ -14,7 +14,7 @@ require (
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/valkey-io/valkey-go v1.0.73
 	github.com/valkey-io/valkey-go/valkeycompat v1.0.72
-	golang.org/x/sync v0.19.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
