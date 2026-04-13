@@ -12,8 +12,8 @@ require (
 	github.com/redis/rueidis v1.0.73
 	github.com/redis/rueidis/rueidiscompat v1.0.73
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
-	github.com/valkey-io/valkey-go v1.0.73
-	github.com/valkey-io/valkey-go/valkeycompat v1.0.73
+	github.com/valkey-io/valkey-go v1.0.74
+	github.com/valkey-io/valkey-go/valkeycompat v1.0.74
 	golang.org/x/sync v0.20.0
 )
 
