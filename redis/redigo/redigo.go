@@ -58,7 +58,7 @@ func (c *conn) PTTL(name string) (time.Duration, error) {
 	return time.Duration(expiry) * time.Millisecond, noErrNil(err)
 }
 
-func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
+func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...any) (any, error) {
 	v, err := c.delegate.Do("EVALSHA", args(script, script.Hash, keysAndArgs)...)
 	if e, ok := err.(redis.Error); ok && strings.HasPrefix(string(e), "NOSCRIPT ") {
 		v, err = c.delegate.Do("EVAL", args(script, script.Src, keysAndArgs)...)
@@ -86,14 +86,14 @@ func noErrNil(err error) error {
 	return nil
 }
 
-func args(script *redsyncredis.Script, spec string, keysAndArgs []interface{}) []interface{} {
-	var args []interface{}
+func args(script *redsyncredis.Script, spec string, keysAndArgs []any) []any {
+	var args []any
 	if script.KeyCount < 0 {
-		args = make([]interface{}, 1+len(keysAndArgs))
+		args = make([]any, 1+len(keysAndArgs))
 		args[0] = spec
 		copy(args[1:], keysAndArgs)
 	} else {
-		args = make([]interface{}, 2+len(keysAndArgs))
+		args = make([]any, 2+len(keysAndArgs))
 		args[0] = spec
 		args[1] = script.KeyCount
 		copy(args[2:], keysAndArgs)

@@ -48,7 +48,7 @@ func (c *conn) PTTL(name string) (time.Duration, error) {
 	return c.delegate.PTTL(c.ctx, name).Result()
 }
 
-func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
+func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...any) (any, error) {
 	keys := make([]string, script.KeyCount)
 	args := keysAndArgs
 
