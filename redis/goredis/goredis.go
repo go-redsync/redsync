@@ -50,7 +50,7 @@ func (c *conn) PTTL(name string) (time.Duration, error) {
 	return expiry, noErrNil(err)
 }
 
-func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...interface{}) (interface{}, error) {
+func (c *conn) Eval(script *redsyncredis.Script, keysAndArgs ...any) (any, error) {
 	keys := make([]string, script.KeyCount)
 	args := keysAndArgs
 

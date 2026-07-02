@@ -15,7 +15,7 @@ type Conn interface {
 	Get(name string) (string, error)
 	Set(name string, value string) (bool, error)
 	SetNX(name string, value string, expiry time.Duration) (bool, error)
-	Eval(script *Script, keysAndArgs ...interface{}) (interface{}, error)
+	Eval(script *Script, keysAndArgs ...any) (any, error)
 	ScriptLoad(script *Script) error
 	PTTL(name string) (time.Duration, error)
 	Close() error
