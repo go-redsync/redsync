@@ -8,7 +8,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gomodule/redigo v1.9.3
 	github.com/redis/go-redis/v9 v9.21.0
-	github.com/redis/rueidis v1.0.73
+	github.com/redis/rueidis v1.0.76
 	github.com/redis/rueidis/rueidiscompat v1.0.73
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/valkey-io/valkey-go v1.0.76
