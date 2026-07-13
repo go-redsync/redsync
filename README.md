@@ -19,7 +19,10 @@ See the [examples](examples) folder for usage of each driver.
 
 ## Documentation
 
-- [Reference](https://godoc.org/github.com/go-redsync/redsync)
+- [Go package reference](https://pkg.go.dev/github.com/go-redsync/redsync/v4)
+- [Sourcey API browser](https://redsync-sourcey-docs.readthedocs.io/en/latest/)
+  provides package and symbol navigation generated from a pinned Redsync
+  source commit, with links back to the corresponding source lines.
 
 ## Usage
 
