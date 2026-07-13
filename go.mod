@@ -13,7 +13,7 @@ require (
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/valkey-io/valkey-go v1.0.76
 	github.com/valkey-io/valkey-go/valkeycompat v1.0.76
-	golang.org/x/sync v0.21.0
+	golang.org/x/sync v0.22.0
 )
 
 require (
