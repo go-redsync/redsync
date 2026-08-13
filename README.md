@@ -19,7 +19,7 @@ See the [examples](examples) folder for usage of each driver.
 
 ## Documentation
 
-- [Reference](https://godoc.org/github.com/go-redsync/redsync)
+- [Reference](https://pkg.go.dev/github.com/go-redsync/redsync/v4)
 
 ## Usage
 
