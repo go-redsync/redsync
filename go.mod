@@ -12,7 +12,7 @@ require (
 	github.com/redis/rueidis/rueidiscompat v1.0.78
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/valkey-io/valkey-go v1.0.78
-	github.com/valkey-io/valkey-go/valkeycompat v1.0.77
+	github.com/valkey-io/valkey-go/valkeycompat v1.0.78
 	golang.org/x/sync v0.23.0
 )
 
