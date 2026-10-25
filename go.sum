@@ -60,10 +60,10 @@ github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWD
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/valkey-io/valkey-go v1.0.79 h1:dryzYka/oOkSMOcNmOTjQI8zfu/4bUzDZNnFW9NlqNM=
 github.com/valkey-io/valkey-go v1.0.79/go.mod h1:gvC/r2m3eW4Hbj0YnjogTzNtFdPSM/D+NCqen+5OABM=
-github.com/valkey-io/valkey-go/mock v1.0.78 h1:hIlrQGefpVc9jfWOevpKkOi+s3Cj6qy7k0smUaYJYtQ=
-github.com/valkey-io/valkey-go/mock v1.0.78/go.mod h1:yycIFWWScdOTmg45pgSNAsIbYLRhx9ghmbrIqE7s3VE=
-github.com/valkey-io/valkey-go/valkeycompat v1.0.78 h1:LTPhv9eomLOnN9g7H0QYsEIuw/ancXIaVe0pP3Tg8N4=
-github.com/valkey-io/valkey-go/valkeycompat v1.0.78/go.mod h1:yYHiV3Wyehted0diqfI43MTQQeEQOj8VFdejbAlvuVQ=
+github.com/valkey-io/valkey-go/mock v1.0.79 h1:6oWOiUyoIVCSlt0KjaOvF5cEntEAW0McRX5B/UasDOA=
+github.com/valkey-io/valkey-go/mock v1.0.79/go.mod h1:/YYjs1rrpnWvTIi2uMtiUAUlA+YQXzf6/CZzVywRhgE=
+github.com/valkey-io/valkey-go/valkeycompat v1.0.79 h1:dSMbbnT3TknsZrmFuWLEJnhLUVFg0HmufLnsbWNwSM0=
+github.com/valkey-io/valkey-go/valkeycompat v1.0.79/go.mod h1:CFMOo5hRk+eyeA7k8L/FFNzouCTv9ccLE1JVME+I/XM=
 github.com/zeebo/xxh3 v1.1.0 h1:s7DLGDK45Dyfg7++yxI0khrfwq9661w9EN78eP/UZVs=
 github.com/zeebo/xxh3 v1.1.0/go.mod h1:IisAie1LELR4xhVinxWS5+zf1lA4p0MW4T+w+W07F5s=
 go.uber.org/atomic v1.12.0 h1:BvcXdFKuviU4fTL/f+SxdQ5qJX/Jix8pAkgdUcb3XOE=
